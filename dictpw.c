@@ -26,7 +26,7 @@
 
 enum {
 	MINWORD = 4,
-	MAXWORD = 16
+	MAXWORD = 10,
 };
 
 static int nflag = 5; /* How many words make up a password. */
