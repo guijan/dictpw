@@ -40,3 +40,5 @@ executable('dictpw',
            'dictpw.c',
            install : true,
            dependencies : libbsd_dep)
+
+install_man('dictpw.1')
