@@ -41,6 +41,11 @@ main(int argc, char *argv[])
 	int ch;
 	const char *errstr;
 
+#if defined(__OpenBSD__)
+	if (pledge("stdio", NULL) == -1)
+		err(1, "pledge");
+#endif
+
 	while ((ch = getopt(argc, argv, "hn:")) != -1) {
 		switch (ch) {
 		case 'h':
