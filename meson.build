@@ -12,7 +12,7 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-project('hangman', 'c',
+project('dictpw', 'c',
   version : '1.0.0',
   default_options : ['c_std=c99', 'b_lto=true', 'warning_level=3'])
 
