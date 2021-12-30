@@ -14,23 +14,11 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 -->
 
-## DESCRIPTION
-dictpw is a very simple password generation program. Every time you run it, it
-randomly picks a default of 5 words off a 7776-word dictionary and prints them
-with a separator (currently a period) between each word. The user can pick more
-or less words, though the program prohibits nonsensically small or large
-passwords.
-This is the [Diceware](https://en.wikipedia.org/wiki/Diceware) method of
-password generation on the command line.
-
-There are 7776^5 or 28430288029929701376 possible passwords using dictpw's
-default scheme.
-If you were to generate a completely random 10 character password composed of
-uppercase characters, lowercase characters, digits, and the symbols on top of
-each digit on the keyboard, that would mean (23+23+10+10)^10 or
-1568336880910795776 possible passwords, or 18 times less possible passwords.
-dictpw by default sits between a 10 and 11 character long password of such a
-scheme.
+## Dictpw - dictionary-based password generator
+Dictpw randomly picks 5 words off a 7776-word dictionary and prints them with a
+dot between each word. This is the
+[Diceware](https://en.wikipedia.org/wiki/Diceware) method of password generation
+from the command line.
 
 Which of the following 2 passwords is easier to memorize?
 ```
@@ -38,8 +26,8 @@ computer.stuffy.dexterity.carve.wife
 J#2%Q*PDfNI
 ```
 
-## BUILD INSTRUCTIONS
-dictpw depends on [Meson](https://mesonbuild.com/), and it may depend on
+## Build instructions
+Dictpw depends on [Meson](https://mesonbuild.com/), and it may depend on
 [libbsd](https://libbsd.freedesktop.org/wiki/) depending on the system.
 
 Install Meson, and follow the build instructions:
@@ -47,18 +35,27 @@ Install Meson, and follow the build instructions:
 $ meson setup build
 $ meson compile -C build
 ```
-
 Meson will tell you if libbsd is required or missing. Run
 `meson compile -C build` again after installing libbsd if it was missing.
 
-The binary will be in build/dictpw
+The binary will be in _build/dictpw_.
 
-## CUSTOM DICTIONARY
-By default, dictpw uses the EFF Large Wordlist dictionary.
+## Analysis
+There are __7776^5__ or __28430288029929701376__ possible passwords using
+dictpw's default word count.
+There are __(23+23+10+10)^10__ or __1568336880910795776__ possible passwords in
+a random 10 character password composed of uppercase characters, lowercase
+characters, digits, and the symbols on top of each digit on the keyboard, or 18
+times less possible passwords. Dictpw by default sits between a 10 and 11
+character long password of such a scheme.
+
+## Custom dictionary
+By default, dictpw uses the EFF's
+[long word list](https://www.eff.org/deeplinks/2016/07/new-wordlists-random-passphrases).
 The awk script at dict.awk can generate a custom dictionary. Read its top level
 comment for instructions.
 
-## EXAMPLE
+## Example
 ```
 $ build/dictpw
 canary.gnat.uncross.waking.expose
