@@ -1,0 +1,95 @@
+# Copyright (c) 2022 Guilherme Janczak <guilherme.janczak@yandex.com>
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+name: Build and test
+on: [push, pull_request]
+
+# GitHub Actions doesn't support YAML anchors, so the bit of code below is
+# copypasted between jobs:
+#
+#      - uses: actions/checkout@v2.4.0
+#      - name: build
+#        run: |
+#          meson setup build
+#          meson compile -C build
+#      - name: test
+#        run: meson test -C build
+#      - uses: actions/upload-artifact@v2.3.1
+#        if: failure()
+#        with:
+#          name: meson-logs
+#          path: build/meson-logs
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v2.3.1
+      - run: |
+          pip install meson ninja
+          sudo apt update
+          sudo apt install -y libbsd-dev
+      - uses: actions/checkout@v2.4.0
+      - name: build
+        run: |
+          meson setup build
+          meson compile -C build
+      - name: test
+        run: meson test -C build
+      - uses: actions/upload-artifact@v2.3.1
+        if: failure()
+        with:
+          name: linux-meson-logs
+          path: build/meson-logs
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/setup-python@v2.3.1
+      - run: pip install meson ninja
+      - uses: actions/checkout@v2.4.0
+      - name: build
+        run: |
+          meson setup build
+          meson compile -C build
+      - name: test
+        run: meson test -C build
+      - uses: actions/upload-artifact@v2.3.1
+        if: failure()
+        with:
+          name: macos-meson-logs
+          path: build/meson-logs
+  msys2:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          update: false
+          release: false
+          install: gcc meson ninja cmake
+          msystem: msys
+      - uses: actions/checkout@v2.4.0
+      - name: build
+        run: |
+          meson setup build
+          meson compile -C build
+      - name: test
+        run: meson test -C build
+      - uses: actions/upload-artifact@v2.3.1
+        if: failure()
+        with:
+          name: msys2-meson-logs
+          path: build/meson-logs

@@ -17,7 +17,8 @@ project('dictpw', 'c',
   default_options : ['c_std=c99', 'b_lto=true', 'warning_level=3'])
 
 # Makes all functions, including BSD functions, visible on GNU.
-add_project_arguments('-D_GNU_SOURCE', language : 'c')
+cc_args = '-D_GNU_SOURCE'
+add_project_arguments(cc_args, language : 'c')
 
 cc = meson.get_compiler('c')
 funcs = {
@@ -27,9 +28,9 @@ funcs = {
   'strtonum': '#include <stdlib.h>',
   'warnx': '#include <err.h>',
 }
-libbsd_dep = dependency('', required: false)
+libbsd_dep = dependency('', required : false)
 foreach func, header : funcs
-  if not cc.has_function(func, prefix : header)
+  if not cc.has_function(func, prefix : header, args : cc_args)
     libbsd_dep = dependency('libbsd-overlay')
     break
   endif
