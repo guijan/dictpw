@@ -79,7 +79,7 @@ jobs:
         with:
           update: false
           release: false
-          install: gcc meson ninja cmake
+          install: cmake gcc git meson ninja
           msystem: msys
       - uses: actions/checkout@v2.4.0
       - name: build
