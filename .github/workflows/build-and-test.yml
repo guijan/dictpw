@@ -74,13 +74,19 @@ jobs:
     defaults:
       run:
         shell: msys2 {0}
+    strategy:
+      matrix:
+        sys: [MINGW64, MINGW32, UCRT64, CLANG64]
     steps:
       - uses: msys2/setup-msys2@v2
         with:
-          update: false
+          msystem: ${{matrix.sys}}
           release: false
-          install: cmake gcc git meson ninja
-          msystem: msys
+          update: false
+          path-type: strict
+          install: git
+          pacboy: >-
+            gcc:p clang:p meson:p ninja:p
       - uses: actions/checkout@v2.4.0
       - name: build
         run: |
@@ -92,4 +98,29 @@ jobs:
         if: failure()
         with:
           name: msys2-meson-logs
+          path: build/meson-logs
+  MSYS:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MSYS
+          release: false
+          update: false
+          path-type: strict
+          install: git gcc clang meson ninja
+      - uses: actions/checkout@v2.4.0
+      - name: build
+        run: |
+          meson setup build
+          meson compile -C build
+      - name: test
+        run: meson test -C build
+      - uses: actions/upload-artifact@v2.3.1
+        if: failure()
+        with:
+          name: MSYS-meson-logs
           path: build/meson-logs
