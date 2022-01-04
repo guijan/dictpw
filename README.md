@@ -96,7 +96,7 @@ $ sh ./dictpw_installer.sh
 ```
 The script automatically sets up the Meson build directory on release mode and
 with stripping turned on, compiles the sources, and runs the .nsi script.
-The installer will be at _build/setup-dictpw-local.exe_.
+The installer will be at _build/setup-dictpw.exe_.
 
 ### Windows example
 Unfortunately, Microsoft hasn't provided a proper way to install command line

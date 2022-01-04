@@ -13,7 +13,7 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 project('dictpw', 'c',
-  version : '1.0.0',
+  version : '1.1.0',
   default_options : ['c_std=c99', 'b_lto=true', 'warning_level=3'])
 
 # Makes all functions, including BSD functions, visible on GNU.

@@ -14,6 +14,17 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+MUI="-DNULL"
+INSTALLER="-DNULL"
+
+while getopts mo: o; do
+case "$o" in
+	m) MUI="-DUSE_MUI";;
+	o) INSTALLER="-DINSTALLEREXE=${OPTARG}";;
+	*) exit 1;;
+esac
+done
+
 if [ -d build ]; then
 	subcmd=configure
 else
@@ -21,5 +32,5 @@ else
 fi
 meson $subcmd --prefix "${PWD}/build" -Dstrip=true --buildtype=release build
 meson install -C build
-makensis -DEXEFILE='build\bin\dictpw.exe' -DDOCFILE='build\doc\dictpw.pdf' -- \
-	 dictpw.nsi
+makensis "$MUI" "$INSTALLER" -DEXEFILE='build\bin\dictpw.exe' \
+	 -DDOCFILE='build\doc\dictpw.pdf' -- dictpw.nsi

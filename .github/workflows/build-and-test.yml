@@ -85,8 +85,7 @@ jobs:
           update: false
           path-type: strict
           install: git
-          pacboy: >-
-            gcc:p clang:p meson:p ninja:p
+          pacboy: gcc:p clang:p meson:p ninja:p
       - uses: actions/checkout@v2.4.0
       - name: build
         run: |
@@ -115,8 +114,7 @@ jobs:
           update: false
           path-type: strict
           install: git
-          pacboy: >-
-            gcc:p clang:p meson:p nsis:p ninja:p
+          pacboy: gcc:p clang:p meson:p nsis:p ninja:p
       - uses: actions/checkout@v2.4.0
       - name: build
         run: |
@@ -125,12 +123,19 @@ jobs:
       - name: test
         run: meson test -C build
       - name: installer
-        run: sh ./dictpw_installer.sh
+        run: ./dictpw_installer.sh -o 'build\setup-dictpw-${{matrix.sys}}.exe'
+      - name: installer-mui
+        run: ./dictpw_installer.sh -mo 'build\setup-dictpw-mui-${{matrix.sys}}.exe'
       - uses: actions/upload-artifact@v2.3.1
         if: failure()
         with:
           name: msys2-${{matrix.sys}}-meson-logs
           path: build/meson-logs
+      - uses: actions/upload-artifact@v2.3.1
+        if: success()
+        with:
+          name: setup-${{matrix.sys}}
+          path: build/setup-*.exe
   MSYS:
     runs-on: windows-latest
     defaults:

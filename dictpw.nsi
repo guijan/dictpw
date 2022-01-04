@@ -17,28 +17,42 @@
 !define ARP "Software\Microsoft\Windows\CurrentVersion\Uninstall\dictpw"
 
 !ifndef INSTALLEREXE
-!define INSTALLEREXE "build\setup-dictpw-local.exe"
+        !define INSTALLEREXE "build\setup-dictpw.exe"
 !endif
 !ifndef EXEFILE
-!define EXEFILE "build\dictpw.exe"
+        !define EXEFILE "build\dictpw.exe"
 !endif
 !ifndef DOCFILE
-!define DOCFILE "build\dictpw.pdf"
+        !define DOCFILE "build\dictpw.pdf"
 !endif
 
-!include "MUI2.nsh"
 !include "FileFunc.nsh"
 
 Name "dictpw"
 OutFile "${INSTALLEREXE}"
 InstallDir "$PROGRAMFILES\dictpw"
 RequestExecutionLevel admin
+ManifestSupportedOS all
 
-!insertmacro MUI_PAGE_LICENSE "LICENSE.md"
-
-!define MUI_DIRECTORYPAGE_VARIABLE "$INSTDIR"
-!insertmacro MUI_PAGE_DIRECTORY
-!insertmacro MUI_PAGE_INSTFILES
+# I discovered that using MUI adds about 30KB of bloat to the installer, it
+# also seems slower, there's a little pause before it starts the installation.
+# We'll use the old installer widget by default.
+!ifdef USE_MUI
+        !define MUI_DIRECTORYPAGE_VARIABLE "$INSTDIR"
+        !include "MUI2.nsh"
+        !insertmacro MUI_PAGE_LICENSE "LICENSE.md"
+        !insertmacro MUI_PAGE_DIRECTORY
+        !insertmacro MUI_PAGE_INSTFILES
+        !insertmacro MUI_UNPAGE_DIRECTORY
+        !insertmacro MUI_UNPAGE_INSTFILES
+!else
+        LicenseData "LICENSE.md"
+        Page license
+        Page directory
+        Page instfiles
+        UninstPage uninstConfirm
+        UninstPage instfiles
+!endif
 
 Section
         SetOutPath $INSTDIR
