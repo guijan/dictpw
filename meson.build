@@ -36,10 +36,20 @@ foreach func, header : funcs
   endif
 endforeach
 
-executable('dictpw',
-           'dict.c',
-           'dictpw.c',
-           install : true,
-           dependencies : libbsd_dep)
-
-install_man('dictpw.1')
+dictpw = executable('dictpw',
+                    'dict.c',
+                    'dictpw.c',
+                    install : true,
+                    dependencies : libbsd_dep)
+if host_machine.system() != 'windows'
+  install_man('dictpw.1')
+else
+  custom_target('manual',
+		command : [find_program('groff'), '-mdoc', '-Tpdf', '--',
+		           '@INPUT@'],
+		input : [files('dictpw.1')],
+		output : ['dictpw.pdf'],
+		capture : true,
+		install : true,
+		install_dir : 'doc')
+endif

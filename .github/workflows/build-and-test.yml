@@ -69,14 +69,14 @@ jobs:
         with:
           name: macos-meson-logs
           path: build/meson-logs
-  msys2:
+  msys2-noinst:
     runs-on: windows-latest
     defaults:
       run:
         shell: msys2 {0}
     strategy:
       matrix:
-        sys: [MINGW64, MINGW32, UCRT64, CLANG64]
+        sys: [CLANG64]
     steps:
       - uses: msys2/setup-msys2@v2
         with:
@@ -97,7 +97,39 @@ jobs:
       - uses: actions/upload-artifact@v2.3.1
         if: failure()
         with:
-          name: msys2-meson-logs
+          name: msys2-${{matrix.sys}}-noinst-meson-logs
+          path: build/meson-logs
+  msys2:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    strategy:
+      matrix:
+        sys: [MINGW64, MINGW32, UCRT64]
+    steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{matrix.sys}}
+          release: false
+          update: false
+          path-type: strict
+          install: git
+          pacboy: >-
+            gcc:p clang:p meson:p nsis:p ninja:p
+      - uses: actions/checkout@v2.4.0
+      - name: build
+        run: |
+          meson setup build
+          meson compile -C build
+      - name: test
+        run: meson test -C build
+      - name: installer
+        run: sh ./dictpw_installer.sh
+      - uses: actions/upload-artifact@v2.3.1
+        if: failure()
+        with:
+          name: msys2-${{matrix.sys}}-meson-logs
           path: build/meson-logs
   MSYS:
     runs-on: windows-latest
