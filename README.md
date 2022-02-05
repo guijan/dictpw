@@ -1,5 +1,5 @@
 <!--
-Copyright (c) 2021 Guilherme Janczak <guilherme.janczak@yandex.com>
+Copyright (c) 2021-2022 Guilherme Janczak <guilherme.janczak@yandex.com>
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -31,9 +31,9 @@ Dictpw depends on [Meson](https://mesonbuild.com/), and it may depend on
 [libbsd](https://libbsd.freedesktop.org/wiki/) depending on the system.
 
 Install Meson, and follow the build instructions:
-```
-$ meson setup build
-$ meson compile -C build
+```sh
+meson setup build
+meson compile -C build
 ```
 Meson will tell you if libbsd is required or missing. Run
 `meson compile -C build` again after installing libbsd if it was missing.
@@ -52,13 +52,15 @@ character long password of such a scheme.
 ## Custom dictionary
 By default, dictpw uses the EFF's
 [long word list](https://www.eff.org/deeplinks/2016/07/new-wordlists-random-passphrases).
-The awk script at dict.awk can generate a custom dictionary. Read its top level
-comment for instructions.
+You can specify a custom dictionary by setting the `dict` option with Meson. A
+dictionary is a file with one word per line.
 
 ## Example
-```
+```console
+foo@bar ~
 $ build/dictpw
 canary.gnat.uncross.waking.expose
+foo@bar ~
 $ build/dictpw -n4
 chummy.iguana.outsider.yearling
 ```
@@ -66,37 +68,56 @@ chummy.iguana.outsider.yearling
 ## Windows support
 ### Windows build instructions
 Dictpw intends to build on all of
-[MSYS2's environments](https://www.msys2.org/docs/environments/). Currently,
-there are some limitations:
-- The CLANG32 environment hasn't been confirmed to work yet.
-- The .nsi script can't produce an installer for the Cygwin build
-- The .nsi script can't install Microsoft's Universal C Runtime for the user
-- NSIS is only available for MINGW64, UCRT64, and MINGW32
+[MSYS2's environments](https://www.msys2.org/docs/environments/).
+MINGW64 and MINGW32 are the most stable MSYS2 environments, therefore they are
+the primary release targets. Support for the other environments is purely for
+the sake of portability.
 
-This leaves us with MINGW64 and MINGW32 for producing releases.
-
-Install [MSYS2](https://www.msys2.org/), follow the installation instructions.
-Make sure to read the
+Install [MSYS2](https://www.msys2.org/) and follow the installation
+instructions; make sure to read the
 [MSYS2-Introduction](https://www.msys2.org/wiki/MSYS2-introduction/) page after
-completing the installation instructions, failure to do so may break your MSYS2 installation.
+completing the installation instructions-failure to do so may break your MSYS2
+installation.
 
-The build instructions below assume a MINGW64 build.
+The rest of this section describes a MINGW64 build.
 
 Install the dependencies:
 ```console
 foo@bar MSYS ~
-$ pacman --noconfirm -S git groff mingw-w64-gcc mingw-w64-meson mingw-w64-ninja
+$ pacman --noconfirm -S git groff mingw-w64-x86_64-gcc mingw-w64-x86_64-meson \
+    mingw-w64-x86_64-ninja mingw-w64-x86_64-nsis
 ```
 Now start the MINGW64 environment, and enter the directory to which you
 downloaded the dictpw sources.
-To produce the installer, run:
+Produce the installer for a release build:
 ```console
 foo@bar MINGW64 ~/dictpw
-$ sh ./dictpw_installer.sh
+$ meson setup -Dbuildtype=release -Dstrip=true build
+foo@bar MINGW64 ~/dictpw
+$ sh dictpw_installer.sh
 ```
-The script automatically sets up the Meson build directory on release mode and
-with stripping turned on, compiles the sources, and runs the .nsi script.
-The installer will be at _build/setup-dictpw.exe_.
+
+### MSYS build instructions
+Building releases with the MSYS compatibility layer is also supported.
+The process is the same, except the dependencies are different:
+```console
+foo@bar MSYS
+$ pacman --noconfirm -S git groff gcc meson ninja mingw-w64-x86_64-nsis
+```
+Obviously, you don't need to enter a different environment to build the MSYS
+version.
+
+### CLANG64 build instructions
+The CLANG64 build process, too, only differs from the MINGW64 build process in
+the dependency list:
+```console
+foo@bar MSYS
+$ pacman --noconfirm -S git groff mingw-w64-clang-x86_64-clang \
+    mingw-w64-clang-x86_64-meson mingw-w64-clang-x86_64-ninja \
+    mingw-w64-x86_64-nsis
+```
+Make sure to enter the CLANG64 environment after installing the dependencies and
+before following the build instructions.
 
 ### Windows example
 Unfortunately, Microsoft hasn't provided a proper way to install command line
@@ -106,8 +127,8 @@ which allows running the program from `cmd.exe` using the `start` command:
 C:\Users\foo>start /b /wait dictpw
 unusual.skewer.swirl.whinny.rogue
 ```
-Keep in mind the /b and /wait flags are necessary. They tell cmd.exe not to
-start another cmd.exe, and to wait for the program to exit.
+Keep in mind the /b and /wait flags are necessary: they tell cmd.exe not to
+start another cmd.exe, and to wait for the program's exit.
 
 ### Windows documentation
 The installer also installs the manual. Check _dictpw.pdf_ inside the

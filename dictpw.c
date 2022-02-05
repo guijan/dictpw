@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Guilherme Janczak <guilherme.janczak@yandex.com>
+ * Copyright (c) 2021-2022 Guilherme Janczak <guilherme.janczak@yandex.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,6 +16,7 @@
 
 #include <assert.h>
 #include <err.h>
+#include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +34,8 @@ static int nflag = 5; /* How many words make up a password. */
 static int hflag = 0; /* Has the help flag been used? */
 
 static void usage(void);
+static void fputs_noerr(const char *, FILE *);
+static void fputc_noerr(int, FILE *);
 
 int
 main(int argc, char *argv[])
@@ -44,6 +47,10 @@ main(int argc, char *argv[])
 #if defined(__OpenBSD__)
 	if (pledge("stdio", NULL) == -1)
 		err(1, "pledge");
+#elif defined(__FreeBSD__)
+#include <sys/capsicum.h>
+	if (cap_enter() == -1)
+		err(1, "cap_enter");
 #endif
 
 	while ((ch = getopt(argc, argv, "hn:")) != -1) {
@@ -88,12 +95,16 @@ main(int argc, char *argv[])
 		exit(0);
 	}
 
+	/*
+	 * We can afford some pedantic code, but we can't afford a bad password,
+	 * so error check the printing functions.
+	 */
 	for (i = 0; i++ < nflag;) {
-		fputs(dict[arc4random_uniform(dictlen)], stdout);
+		fputs_noerr(dict[arc4random_uniform(dictlen)], stdout);
 		if (i < nflag)
-			putc('.', stdout);
+			fputc_noerr('.', stdout);
 		else
-			putc('\n', stdout);
+			fputc_noerr('\n', stdout);
 	}
 	exit(0);
 }
@@ -104,4 +115,20 @@ usage(void)
 	fprintf(stderr, "usage:"
 	    "\t%s [-h] [-n %d <= words <= %d]\n", getprogname(), MINWORD,
 	    MAXWORD);
+}
+
+static void
+fputs_noerr(const char *str, FILE *stream)
+{
+	errno = 0;
+	if (fputs(str, stream) == EOF && errno != 0)
+		err(1, "fputs");
+}
+
+static void
+fputc_noerr(int c, FILE *stream)
+{
+	errno = 0;
+	if (putc(c, stream) == EOF && errno != 0)
+		err(1, "putc");
 }

@@ -69,35 +69,6 @@ jobs:
         with:
           name: macos-meson-logs
           path: build/meson-logs
-  msys2-noinst:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    strategy:
-      matrix:
-        sys: [CLANG64]
-    steps:
-      - uses: msys2/setup-msys2@v2
-        with:
-          msystem: ${{matrix.sys}}
-          release: false
-          update: false
-          path-type: strict
-          install: git
-          pacboy: gcc:p clang:p meson:p ninja:p
-      - uses: actions/checkout@v2.4.0
-      - name: build
-        run: |
-          meson setup build
-          meson compile -C build
-      - name: test
-        run: meson test -C build
-      - uses: actions/upload-artifact@v2.3.1
-        if: failure()
-        with:
-          name: msys2-${{matrix.sys}}-noinst-meson-logs
-          path: build/meson-logs
   msys2:
     runs-on: windows-latest
     defaults:
@@ -105,17 +76,22 @@ jobs:
         shell: msys2 {0}
     strategy:
       matrix:
-        sys: [MINGW64, MINGW32, UCRT64]
+        sys: [msys, clang64, mingw64, mingw32, ucrt64]
     steps:
       - uses: msys2/setup-msys2@v2
         with:
           msystem: ${{matrix.sys}}
-          release: false
-          update: false
-          path-type: strict
-          install: git
-          pacboy: gcc:p clang:p meson:p nsis:p ninja:p
+          install: git groff pactoys
       - uses: actions/checkout@v2.4.0
+      - name: setup-msys
+        if: ${{matrix.sys == 'msys'}}
+        run: pacman -S --noconfirm --needed mingw-w64-x86_64-nsis meson gcc
+      - name: setup-no-nsis
+        if: ${{matrix.sys == 'clang64'}}
+        run: pacboy -S --noconfirm --needed mingw-w64-x86_64-nsis meson:p clang
+      - name: setup-nsis
+        if: ${{matrix.sys != 'msys' && matrix.sys != 'clang64'}}
+        run: pacboy -S --noconfirm --needed -- nsis:p meson:p gcc
       - name: build
         run: |
           meson setup build
@@ -125,39 +101,48 @@ jobs:
       - name: installer
         run: ./dictpw_installer.sh -o 'build\setup-dictpw-${{matrix.sys}}.exe'
       - name: installer-mui
-        run: ./dictpw_installer.sh -mo 'build\setup-dictpw-mui-${{matrix.sys}}.exe'
+        run: |
+          ./dictpw_installer.sh -mo \
+              'build\setup-mui-dictpw-${{matrix.sys}}.exe'
       - uses: actions/upload-artifact@v2.3.1
         if: failure()
         with:
-          name: msys2-${{matrix.sys}}-meson-logs
+          name: ${{matrix.sys}}-meson-logs
           path: build/meson-logs
       - uses: actions/upload-artifact@v2.3.1
         if: success()
         with:
           name: setup-${{matrix.sys}}
           path: build/setup-*.exe
-  MSYS:
+  cygwin:
     runs-on: windows-latest
+    env:
+      CYGWIN_NOWINPATH: 1 # Removes non-Cygwin dirs from PATH.
+      CHERE_INVOKING: '' # Makes Cygwin's `bash.exe --login` not cd.
     defaults:
       run:
-        shell: msys2 {0}
+        shell: C:\cygwin\bin\bash.exe --login -o igncr {0}
     steps:
-      - uses: msys2/setup-msys2@v2
-        with:
-          msystem: MSYS
-          release: false
-          update: false
-          path-type: strict
-          install: git gcc clang meson ninja
+      - run: git config --global core.autocrlf input
+        # This is NOT the Cygwin bash, it's the Git for Windows bash from the
+        # default Github Actions Windows VM. This step tells git to translate Unix
+        # newlines to DOS newlines.
+        shell: bash
       - uses: actions/checkout@v2.4.0
+      - uses: cygwin/cygwin-install-action@master
+        with:
+          packages: gcc-core meson groff-perl
       - name: build
         run: |
+          cd ${GITHUB_WORKSPACE}
           meson setup build
           meson compile -C build
       - name: test
-        run: meson test -C build
+        run: |
+          cd ${GITHUB_WORKSPACE}
+          meson test -C build
       - uses: actions/upload-artifact@v2.3.1
         if: failure()
         with:
-          name: MSYS-meson-logs
+          name: cygwin-meson-logs
           path: build/meson-logs

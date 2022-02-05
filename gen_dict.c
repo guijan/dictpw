@@ -14,12 +14,43 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <inttypes.h>
-#include "dict.h"
+#include <err.h>
+#include <stdio.h>
+#include <string.h>
 
-const char *const dict[] = {
-#include "gen_dict.h"
-};
+/* gen_dict: Generate the members of a C array declaration from a list of words.
+ *
+ * The list comes from stdin, the members go to stdout.
+ */
+int
+main(void)
+{
+	/* Deliberately small to forbid absurdly large words. */
+	char word[32];
+	size_t wordlen;
 
-/* uint32_t because dictlen is used as the argument to arc4random_uniform. */
-const uint32_t dictlen = sizeof(dict) / sizeof(*dict);
+	for (;;) {
+		if (fgets(word, sizeof(word), stdin) == NULL) {
+			if (ferror(stdin))
+				err(1, "fgets");
+			break;
+		}
+
+		word[strcspn(word, "\r\n")] = '\0';
+		if ((wordlen = strlen(word)) == 0)
+			continue;
+
+		/* It's easier to forbid quotes and backslashes than to parse
+		 * them.
+		 */
+		if (strcspn(word, "\"\\") != wordlen) {
+			errx(1, "word contains a quote or a backslash: %s",
+			    word);
+		}
+
+		if (printf("\t\"%s\",\n", word) < 0)
+			err(1, "printf");
+	}
+
+	return (0);
+}

@@ -13,7 +13,7 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 project('dictpw', 'c',
-  version : '1.1.0',
+  version : '1.1.1',
   default_options : ['c_std=c99', 'b_lto=true', 'warning_level=3'])
 
 # Makes all functions, including BSD functions, visible on GNU.
@@ -36,12 +36,27 @@ foreach func, header : funcs
   endif
 endforeach
 
+
+gen_dict = executable('gen_dict',
+                      'gen_dict.c',
+                      dependencies: libbsd_dep)
+gen_dict_h = custom_target('gen_dict',
+                           output: 'gen_dict.h',
+                           capture: true,
+                           input: get_option('dict'),
+                           feed: true,
+                           depend_files: get_option('dict'),
+                           command: gen_dict)
+
 dictpw = executable('dictpw',
                     'dict.c',
                     'dictpw.c',
+                    gen_dict_h,
                     install : true,
                     dependencies : libbsd_dep)
-if host_machine.system() != 'windows'
+subdir('test')
+
+if host_machine.system() != 'windows' and host_machine.system() != 'cygwin'
   install_man('dictpw.1')
 else
   custom_target('manual',

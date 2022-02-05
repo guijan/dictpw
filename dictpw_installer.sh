@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh -evx
 
 # Copyright (c) 2022 Guilherme Janczak <guilherme.janczak@yandex.com>
 #
@@ -14,23 +14,37 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-MUI="-DNULL"
-INSTALLER="-DNULL"
+readonly EXEFILE='build\bin\dictpw.exe'
+readonly DOCFILE='build\doc\dictpw.pdf'
 
+MUI='-DNULL'
+OUTFILE='-DNULL'
 while getopts mo: o; do
 case "$o" in
 	m) MUI="-DUSE_MUI";;
-	o) INSTALLER="-DINSTALLEREXE=${OPTARG}";;
+	o) OUTFILE="-DOUTFILE=${OPTARG}";;
 	*) exit 1;;
 esac
 done
 
-if [ -d build ]; then
-	subcmd=configure
-else
-	subcmd=setup
-fi
-meson $subcmd --prefix "${PWD}/build" -Dstrip=true --buildtype=release build
+meson configure --prefix "${PWD}/build" build
 meson install -C build
-makensis "$MUI" "$INSTALLER" -DEXEFILE='build\bin\dictpw.exe' \
-	 -DDOCFILE='build\doc\dictpw.pdf' -- dictpw.nsi
+
+MSYS='-DNULL'
+# Distribute msys-2.0.dll for the MSYS build.
+if [ "$MSYSTEM" = "MSYS" ]; then
+	msysdll='build\bin\msys-2.0.dll'
+	cp /usr/bin/msys-2.0.dll "$msysdll"
+	MSYS="-DMSYS=$msysdll"
+fi
+
+# This profane incantation means "if I'm in MSYS or CLANG64, run MINGW64's
+# makensis, else run my environment's makensis." The odd quoting is because the
+# whole command line needs to be passed as a single argument to the shell.
+if [ "$MSYSTEM" = "MSYS" ] || [ "$MSYSTEM" = "CLANG64" ]; then
+	subsh="/msys2_shell.cmd -defterm -here -no-start -mingw64 -c"
+else
+	subsh='bash -c'
+fi
+$subsh "makensis '$MSYS' '$MUI' '$OUTFILE' \
+    -DEXEFILE='$EXEFILE' -DDOCFILE='$DOCFILE' dictpw.nsi"
