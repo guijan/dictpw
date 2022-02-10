@@ -1,3 +1,5 @@
+Changes in dictpw 1.1.1:
+
 A plethora of non-functional enhancements were made in this release:
 
 - Remove the need for AWK when specifying a custom dictionary.
@@ -12,3 +14,4 @@ A plethora of non-functional enhancements were made in this release:
 - Use FreeBSD's [capsicum](https://www.freebsd.org/cgi/man.cgi?capsicum)
   framework.
 - Unify the MSYS2 Github Actions jobs.
+
