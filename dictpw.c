@@ -24,6 +24,7 @@
 #include <unistd.h>
 
 #include "dict.h"
+#include <caps.h>
 
 enum {
 	MINWORD = 4,
@@ -44,15 +45,7 @@ main(int argc, char *argv[])
 	int ch;
 	const char *errstr;
 
-#if defined(__OpenBSD__)
-	if (pledge("stdio", NULL) == -1)
-		err(1, "pledge");
-#elif defined(__FreeBSD__)
-#include <sys/capsicum.h>
-	if (cap_enter() == -1)
-		err(1, "cap_enter");
-#endif
-
+	caps();
 	while ((ch = getopt(argc, argv, "hn:")) != -1) {
 		switch (ch) {
 		case 'h':

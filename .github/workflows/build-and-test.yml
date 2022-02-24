@@ -146,3 +146,33 @@ jobs:
         with:
           name: cygwin-meson-logs
           path: build/meson-logs
+  haiku:
+    runs-on: ubuntu-latest
+    container: docker.io/hectormolinero/qemu-haiku:latest
+    steps:
+      # Copied from: https://github.com/hectorm/docker-qemu-haiku#github-actions
+      # Notice I changed make to meson in the 'Install packages' step.
+      - name: 'Wait until the VM is ready'
+        run: 'container-init & timeout 600 vmshell exit 0'
+      - name: 'Install packages'
+        run: 'vmshell pkgman install -y meson gcc haiku_devel'
+      - name: 'Checkout project'
+        uses: 'actions/checkout@main'
+      - name: 'Copy project to VM'
+        run: 'vmshell mkdir ./src/; tar -cf - ./ | vmshell tar -xf - -C ./src/'
+      # Now the rest is much of the same old.
+      - name: build
+        run: |
+          vmshell meson setup build src
+          vmshell meson compile -C build
+      - name: test
+        run: vmshell meson test -C build
+      - name: copy failure logs
+        if: failure()
+        run: |
+          vmshell tar -cf - build/meson-logs | tar -xf -
+      - uses: actions/upload-artifact@v2.3.1
+        if: failure()
+        with:
+          name: haiku-meson-logs
+          path: build/meson-logs

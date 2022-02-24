@@ -33,6 +33,15 @@ common_template: &common_script
 
 task:
   container:
+    image: artixlinux/base
+    kvm: true
+  name: artix (bleeding edge packages)
+  setup_script:
+    - pacman --noconfirm -Syu ninja clang meson
+  << : *common_script
+
+task:
+  container:
     image: kcubeterm/termux:x86_64
     kvm: true
   name: bionic
