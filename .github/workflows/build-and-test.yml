@@ -88,10 +88,11 @@ jobs:
         run: pacman -S --noconfirm --needed mingw-w64-x86_64-nsis meson gcc
       - name: setup-no-nsis
         if: ${{matrix.sys == 'clang64'}}
-        run: pacboy -S --noconfirm --needed mingw-w64-x86_64-nsis meson:p clang
+        run: |
+          pacboy -S --noconfirm --needed mingw-w64-x86_64-nsis meson:p clang:p
       - name: setup-nsis
         if: ${{matrix.sys != 'msys' && matrix.sys != 'clang64'}}
-        run: pacboy -S --noconfirm --needed -- nsis:p meson:p gcc
+        run: pacboy -S --noconfirm --needed -- nsis:p meson:p gcc:p
       - name: build
         run: |
           meson setup build
