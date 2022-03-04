@@ -20,7 +20,7 @@ on:
 
 jobs:
   # keep in sync with msys2 from build-and-test.yml
-  windows-build:
+  mingw-build:
     runs-on: windows-latest
     outputs:
       version: ${{steps.installer.outputs.version}}
@@ -39,26 +39,64 @@ jobs:
           pacboy: gcc:p meson:p nsis:p ninja:p jq:p
       - uses: actions/checkout@v2.4.0
       - name: prepare
-        run: meson setup -Dbuildtype=release -Dstrip=true build
+        run: |
+          meson setup -Dbuildtype=release build
+          meson compile -C build
+          strip build/dictpw.exe
       - name: installer
         id: installer
         run: |
           ver="$(meson introspect --projectinfo build | jq -r '.version')"
           printf '::set-output name=version::%s\n' "$ver"
+
           inst="setup-dictpw-${ver}-${{matrix.sys}}.exe"
-          inst_mui="setup-mui-dictpw-${ver}-${{matrix.sys}}.exe"
           ./dictpw_installer.sh -o "build/$inst"
-          ./dictpw_installer.sh -mo "build/$inst_mui"
-          cd ./build
-          sha256sum "$inst" > "${inst}.sha256sum"
-          sha256sum "$inst_mui" > "${inst_mui}.sha256sum"
+      - uses: actions/upload-artifact@v2.3.1
+        if: success()
+        with:
+          name: dist
+          path: build/setup*dictpw*
+  vs-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/setup-python@v2.3.1
+      - name: setup
+        run: |
+          pip install meson
+          choco install groff
+      - uses: actions/checkout@v2.4.0
+      - name: prepare
+        run: |
+          $cross = "--cross-file=.github/workflows/meson-vs-aarch64.txt"
+          meson setup -Dbuildtype=release $cross --backend=vs `
+              --cross-file=.github/workflows/meson-vs-clang.txt  build
+          meson compile -C build
+      - name: test
+        run: meson test -C build
+      - name: get 64-bit NSIS
+        run: |
+          # Reference: https://www.msys2.org/docs/ci/
+          # Run for the first time
+          C:\msys64\usr\bin\bash -lc ' '
+          # Update MSYS2
+          C:\msys64\usr\bin\bash -lc 'pacman --noconfirm -Syuu'  # Core update
+          C:\msys64\usr\bin\bash -lc `
+              'pacman --noconfirm -Syuu mingw-w64-x86_64-nsis'  # Normal update
+      - name: installer
+        run: |
+          $ver = "${{needs.mingw-build.outputs.version}}"
+          $out = "build\setup-dictpw-${ver}-vs-clang-aarch64.exe"
+          $cmd = "makensis -DOUTFILE='" + "$out"  + "' dictpw.nsi"
+          $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
+          $env:MSYSTEM = 'MINGW64'  # Start a 64 bit Mingw environment
+          C:\msys64\usr\bin\bash -lc "$cmd"
       - uses: actions/upload-artifact@v2.3.1
         if: success()
         with:
           name: dist
           path: build/setup*dictpw*
   publish:
-    needs: windows-build
+    needs: [mingw-build, vs-build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-python@v2.3.1
@@ -74,7 +112,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ver="${{needs.windows-build.outputs.version}}"
+          (cd dist && for file in *.exe; do sha256sum *.exe > \
+              "${file}.sha256sum"; done)
+          ver="${{needs.mingw-build.outputs.version}}"
           gh release create "v$ver" --title "dictpw $ver" \
             --notes-file "docs/CHANGELOG-${ver}.md" \
             --target $GITHUB_SHA dist/* build/meson-dist/*

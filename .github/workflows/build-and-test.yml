@@ -32,7 +32,7 @@ on: [push, pull_request]
 #          path: build/meson-logs
 
 jobs:
-  linux:
+  glibc:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-python@v2.3.1
@@ -50,7 +50,7 @@ jobs:
       - uses: actions/upload-artifact@v2.3.1
         if: failure()
         with:
-          name: linux-meson-logs
+          name: meson-logs-glibc
           path: build/meson-logs
   macos:
     runs-on: macos-latest
@@ -67,7 +67,7 @@ jobs:
       - uses: actions/upload-artifact@v2.3.1
         if: failure()
         with:
-          name: macos-meson-logs
+          name: meson-logs-macos
           path: build/meson-logs
   msys2:
     runs-on: windows-latest
@@ -81,7 +81,7 @@ jobs:
       - uses: msys2/setup-msys2@v2
         with:
           msystem: ${{matrix.sys}}
-          install: git groff pactoys
+          install: git groff pactoys dos2unix
       - uses: actions/checkout@v2.4.0
       - name: setup-msys
         if: ${{matrix.sys == 'msys'}}
@@ -101,14 +101,10 @@ jobs:
         run: meson test -C build
       - name: installer
         run: ./dictpw_installer.sh -o 'build\setup-dictpw-${{matrix.sys}}.exe'
-      - name: installer-mui
-        run: |
-          ./dictpw_installer.sh -mo \
-              'build\setup-mui-dictpw-${{matrix.sys}}.exe'
       - uses: actions/upload-artifact@v2.3.1
         if: failure()
         with:
-          name: ${{matrix.sys}}-meson-logs
+          name: meson-logs-${{matrix.sys}}
           path: build/meson-logs
       - uses: actions/upload-artifact@v2.3.1
         if: success()
@@ -126,13 +122,14 @@ jobs:
     steps:
       - run: git config --global core.autocrlf input
         # This is NOT the Cygwin bash, it's the Git for Windows bash from the
-        # default Github Actions Windows VM. This step tells git to translate Unix
-        # newlines to DOS newlines.
+        # default Github Actions Windows VM. This step tells git to translate
+        # Unix newlines to DOS newlines.
         shell: bash
       - uses: actions/checkout@v2.4.0
       - uses: cygwin/cygwin-install-action@master
         with:
-          packages: gcc-core meson groff-perl
+          # git might be needed while working with git versions of libobsd
+          packages: gcc-core meson groff-perl git dos2unix
       - name: build
         run: |
           cd ${GITHUB_WORKSPACE}
@@ -145,7 +142,7 @@ jobs:
       - uses: actions/upload-artifact@v2.3.1
         if: failure()
         with:
-          name: cygwin-meson-logs
+          name: meson-logs-cygwin
           path: build/meson-logs
   haiku:
     runs-on: ubuntu-latest
@@ -175,5 +172,61 @@ jobs:
       - uses: actions/upload-artifact@v2.3.1
         if: failure()
         with:
-          name: haiku-meson-logs
+          name: meson-logs-haiku
           path: build/meson-logs
+  vs:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        cc: [clang, msvc]
+        arch: [aarch64, amd64]
+    steps:
+      - uses: actions/setup-python@v2.3.1
+      - run: |
+          pip install meson
+          choco install groff dos2unix
+      - uses: actions/checkout@v2.4.0
+      - name: build
+        run: |
+          if ("${{matrix.arch}}" -eq "aarch64") {
+            $cross = "--cross-file=.github/workflows/meson-vs-aarch64.txt"
+          }
+          if ("${{matrix.cc}}" -eq "msvc") {
+            # buildtype=plain because b_sanitize doesn't work with debug libs on
+            # VS.
+            # Also, asan doesn't seem to be working with clang.
+            $build = "-Dbuildtype=debug"
+            $asan = "-Db_sanitize=address"
+          }
+          meson setup -Db_vscrt=static_from_buildtype $cross $build $asan `
+              --backend=vs `
+              --cross-file=.github/workflows/meson-vs-${{matrix.cc}}.txt build
+          meson compile -C build
+      - name: test
+        run: meson test -C build
+      - name: get 64-bit NSIS
+        run: |
+          # Reference: https://www.msys2.org/docs/ci/
+          # Run for the first time
+          C:\msys64\usr\bin\bash -lc ' '
+          # Update MSYS2
+          C:\msys64\usr\bin\bash -lc 'pacman --noconfirm -Syuu'  # Core update
+          C:\msys64\usr\bin\bash -lc `
+              'pacman --noconfirm -Syuu mingw-w64-x86_64-nsis'  # Normal update
+      - name: installer
+        run: |
+          $out = "build\setup-dictpw-vs-${{matrix.cc}}-${{matrix.arch}}.exe"
+          $cmd = "makensis -DOUTFILE='" + "$out"  + "' dictpw.nsi"
+          $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
+          $env:MSYSTEM = 'MINGW64'  # Start a 64 bit Mingw environment
+          C:\msys64\usr\bin\bash -lc "$cmd"
+      - uses: actions/upload-artifact@v2.3.1
+        if: failure()
+        with:
+          name: meson-logs-vs-${{matrix.cc}}-${{matrix.arch}}
+          path: build/meson-logs
+      - uses: actions/upload-artifact@v2.3.1
+        if: success()
+        with:
+          name: setup-vs-${{matrix.cc}}-${{matrix.arch}}
+          path: build/setup-*.exe

@@ -1,0 +1,3 @@
+[binaries]
+c = 'clang-cl'
+c_ld = 'lld-link'

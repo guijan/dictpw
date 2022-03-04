@@ -17,9 +17,17 @@ project('dictpw', 'c', version: '1.1.1',
 
 # Makes all functions, including BSD functions, visible on GNU.
 args = ['-D_GNU_SOURCE']
+
 cc = meson.get_compiler('c')
-subdir('compat')
+
+# Spectre mitigations are off by default under MSVC for some ungodly reason.
+if cc.get_id() == 'msvc'
+  args += '/Qspectre'
+endif
+
 add_project_arguments(args, language: 'c')
+
+subdir('compat')
 
 funcs = {
   'arc4random_uniform': '#include <stdlib.h>',
@@ -36,10 +44,9 @@ foreach func, header : funcs
   endif
 endforeach
 
-
 gen_dict = executable('gen_dict',
                       'gen_dict.c',
-                      dependencies: libbsd_dep)
+                      native: true)
 gen_dict_h = custom_target('gen_dict',
                            output: 'gen_dict.h',
                            capture: true,
@@ -55,18 +62,56 @@ dictpw = executable('dictpw',
                     gen_dict_h,
                     install: true,
                     dependencies: libbsd_dep,
-                    include_directories: incdir)
+                    include_directories: incdir,
+                    win_subsystem: 'console')
 subdir('test')
 
-if host_machine.system() != 'windows' and host_machine.system() != 'cygwin'
-  install_man('dictpw.1')
-else
-  custom_target('manual',
-		command : [find_program('groff'), '-mdoc', '-Tpdf', '--',
-		           '@INPUT@'],
-		input : [files('dictpw.1')],
-		output : ['dictpw.pdf'],
-		capture : true,
-		install : true,
-		install_dir : 'doc')
+install_man('dictpw.1')
+
+if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
+  # Build a .txt version of the manual too. For producing the installer.
+
+  # Create groff IR version of the manual.
+  man_groff = custom_target('man_groff',
+                            command: [find_program('groff'), '-mdoc', '-Tascii',
+                                      '-Z'],
+                            input: [files('dictpw.1')],
+                            feed: true,
+                            output: ['dictpw.groff'],
+                            capture: true)
+  # Convert groff to ASCII with Unix newlines.
+  # '-bcou' means "don't use ANSI escapes".
+  man_unix = custom_target('man_unix',
+                           command: [find_program('grotty'), '-bcou'],
+                           input: [man_groff],
+                           feed: true,
+                           output: ['dictpw.txt.unix'],
+                           capture: true)
+
+  unix2dos = find_program('unix2dos')
+  # Convert Unix newlines to DOS newlines.
+  man = custom_target('man',
+                      command: [unix2dos],
+                      input: [man_unix],
+                      feed: true,
+                      output: ['dictpw.txt'],
+                      capture: true,
+                      build_by_default: true)
+
+  # Put copies of the license and the README with DOS newlines in the build
+  # directory too.
+  custom_target('license',
+                command: [unix2dos],
+                input: ['LICENSE.md'],
+                feed: true,
+                output: ['LICENSE.txt'],
+                capture: true,
+                build_by_default: true)
+  custom_target('readme',
+                command: [unix2dos],
+                input: ['README.md'],
+                feed: true,
+                output: ['README.txt'],
+                capture: true,
+                build_by_default: true)
 endif

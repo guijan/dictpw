@@ -14,9 +14,16 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <err.h>
+#include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+/* We can't depend on err() from libbsd because Meson doesn't support depending
+ * on the same library in the build and the host systems.
+ */
+static int myerr(int, int, const char *, ...);
 
 /* gen_dict: Generate the members of a C array declaration from a list of words.
  *
@@ -32,7 +39,7 @@ main(void)
 	for (;;) {
 		if (fgets(word, sizeof(word), stdin) == NULL) {
 			if (ferror(stdin))
-				err(1, "fgets");
+				myerr(1, 1, "fgets");
 			break;
 		}
 
@@ -44,13 +51,30 @@ main(void)
 		 * them.
 		 */
 		if (strcspn(word, "\"\\") != wordlen) {
-			errx(1, "word contains a quote or a backslash: %s",
+			myerr(1, 0, "word contains a quote or a backslash: %s",
 			    word);
 		}
 
 		if (printf("\t\"%s\",\n", word) < 0)
-			err(1, "printf");
+			myerr(1, 1, "printf");
 	}
 
 	return (0);
+}
+
+/* err: err() and errx() for a program that can't count on the system's err()
+ * If `printerr` is set, print the string associated with the current errno
+ * value.
+ */
+static int
+myerr(int eval, int printerr, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	if (printerr)
+		fprintf(stderr, ": %s\n", strerror(errno));
+	va_end(ap);
+	exit(eval);
 }

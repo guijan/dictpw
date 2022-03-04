@@ -14,37 +14,37 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-readonly EXEFILE='build\bin\dictpw.exe'
-readonly DOCFILE='build\doc\dictpw.pdf'
-
-MUI='-DNULL'
 OUTFILE='-DNULL'
-while getopts mo: o; do
+while getopts o: o; do
 case "$o" in
-	m) MUI="-DUSE_MUI";;
 	o) OUTFILE="-DOUTFILE=${OPTARG}";;
 	*) exit 1;;
 esac
 done
 
-meson configure --prefix "${PWD}/build" build
-meson install -C build
+if ! [ -d 'build' ]; then
+	meson setup -Dbuildtype=release build
+fi
+if ! [ -f 'build/dictpw.exe' ]; then
+	meson compile -C build
+fi
 
 MSYS='-DNULL'
 # Distribute msys-2.0.dll for the MSYS build.
 if [ "$MSYSTEM" = "MSYS" ]; then
-	msysdll='build\bin\msys-2.0.dll'
+	msysdll='build\msys-2.0.dll'
 	cp /usr/bin/msys-2.0.dll "$msysdll"
 	MSYS="-DMSYS=$msysdll"
 fi
 
 # This profane incantation means "if I'm in MSYS or CLANG64, run MINGW64's
-# makensis, else run my environment's makensis." The odd quoting is because the
-# whole command line needs to be passed as a single argument to the shell.
+# makensis, else run my environment's makensis."
 if [ "$MSYSTEM" = "MSYS" ] || [ "$MSYSTEM" = "CLANG64" ]; then
 	subsh="/msys2_shell.cmd -defterm -here -no-start -mingw64 -c"
 else
 	subsh='bash -c'
 fi
-$subsh "makensis '$MSYS' '$MUI' '$OUTFILE' \
-    -DEXEFILE='$EXEFILE' -DDOCFILE='$DOCFILE' dictpw.nsi"
+
+# The odd quoting is because the whole command line needs to be passed as a
+# single argument to the subshell.
+$subsh "makensis '$MSYS' '$OUTFILE' dictpw.nsi"

@@ -37,7 +37,7 @@ task:
     kvm: true
   name: artix (bleeding edge packages)
   setup_script:
-    - pacman --noconfirm -Syu ninja clang meson
+    - pacman --noconfirm -Syu ninja clang meson git
   << : *common_script
 
 task:
@@ -50,7 +50,7 @@ task:
     - printf '%s\n' 'objects.githubusercontent.com' >>
         /system/etc/static-dns-hosts.txt
     - /system/bin/update-static-dns
-    - pkg install -y ninja clang python
+    - pkg install -y ninja clang python git
     - pip install meson
   << : *common_script
 
@@ -69,5 +69,5 @@ task:
     kvm: true
   name: musl
   setup_script:
-    - apk add meson alpine-sdk clang libbsd-dev
+    - apk add meson alpine-sdk clang libbsd-dev git
   << : *common_script

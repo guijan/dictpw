@@ -31,4 +31,3 @@ caps(void)
 	if (cap_enter() == -1)
 		err(1, "cap_enter");
 }
-
