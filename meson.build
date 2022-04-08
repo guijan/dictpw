@@ -12,7 +12,7 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-project('dictpw', 'c', version: '1.1.1',
+project('dictpw', 'c', version: '1.2.0', license: 'ISC',
         default_options: ['c_std=c99', 'b_lto=true', 'warning_level=3'])
 
 # Makes all functions, including BSD functions, visible on GNU.

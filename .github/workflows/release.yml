@@ -35,7 +35,7 @@ jobs:
         with:
           msystem: ${{matrix.sys}}
           path-type: strict
-          install: git groff
+          install: git groff dos2unix
           pacboy: gcc:p meson:p nsis:p ninja:p jq:p
       - uses: actions/checkout@v2.4.0
       - name: prepare
@@ -57,13 +57,14 @@ jobs:
           name: dist
           path: build/setup*dictpw*
   vs-build:
+    needs: mingw-build
     runs-on: windows-latest
     steps:
       - uses: actions/setup-python@v2.3.1
       - name: setup
         run: |
           pip install meson
-          choco install groff
+          choco install groff dos2unix
       - uses: actions/checkout@v2.4.0
       - name: prepare
         run: |
@@ -85,7 +86,7 @@ jobs:
       - name: installer
         run: |
           $ver = "${{needs.mingw-build.outputs.version}}"
-          $out = "build\setup-dictpw-${ver}-vs-clang-aarch64.exe"
+          $out = "build\setup-dictpw-" + "$ver" + "-vs-clang-aarch64.exe"
           $cmd = "makensis -DOUTFILE='" + "$out"  + "' dictpw.nsi"
           $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
           $env:MSYSTEM = 'MINGW64'  # Start a 64 bit Mingw environment
@@ -112,7 +113,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          (cd dist && for file in *.exe; do sha256sum *.exe > \
+          (cd dist && for file in *.exe; do sha256sum "$file" > \
               "${file}.sha256sum"; done)
           ver="${{needs.mingw-build.outputs.version}}"
           gh release create "v$ver" --title "dictpw $ver" \
