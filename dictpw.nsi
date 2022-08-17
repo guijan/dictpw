@@ -36,8 +36,6 @@
 !define MUI_DIRECTORYPAGE_VARIABLE "$INSTDIR"
 !include "MUI2.nsh"
 !insertmacro MUI_PAGE_LICENSE "LICENSE.md"
-# Uninstalling previous versions allows changing the installed files without
-# leaving any lingering files.
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_UNPAGE_DIRECTORY
@@ -50,6 +48,8 @@ RequestExecutionLevel admin
 showinstdetails show
 
 Section
+	# Uninstalling previous versions allows changing the installed files
+	# without leaving any lingering files.
 	Call UninstPrevious
 
         SetOutPath $INSTDIR
