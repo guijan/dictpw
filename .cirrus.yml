@@ -57,7 +57,7 @@ task:
 task:
   freebsd_instance:
     # Keep updated with newest release from https://www.freebsd.org/releases/
-    image: freebsd-13-0-release-amd64
+    image: freebsd-13-1-release-amd64
   name: freebsd
   setup_script:
     - pkg install -y meson ninja gcc

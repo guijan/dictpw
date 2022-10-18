@@ -145,8 +145,8 @@ jobs:
           name: meson-logs-cygwin
           path: build/meson-logs
   haiku:
-    runs-on: ubuntu-latest
-    container: docker.io/hectormolinero/qemu-haiku:latest
+    runs-on: ubuntu-22.04
+    container: 'docker.io/hectorm/qemu-haiku:latest'
     steps:
       # Copied from: https://github.com/hectorm/docker-qemu-haiku#github-actions
       # Notice I changed make to meson in the 'Install packages' step.
