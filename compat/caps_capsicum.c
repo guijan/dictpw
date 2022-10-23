@@ -18,14 +18,14 @@
 #include <sys/procctl.h>
 
 #include <err.h>
-#include <unistd.h>
 
 void
 caps(void)
 {
 	int ret;
-	ret = procctl(P_PID, getpid(), PROC_TRAPCAP_CTL,
-	    PROC_TRAPCAP_CTL_ENABLE);
+	int data;
+	data = PROC_TRAPCAP_CTL_ENABLE;
+	ret = procctl(P_PID, 0, PROC_TRAPCAP_CTL, &data);
 	if (ret == -1)
 		err(1, "procctl");
 	if (cap_enter() == -1)

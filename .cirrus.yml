@@ -28,8 +28,8 @@ common_template: &common_script
   install_script:
     - meson install -C build
   on_failure:
-    termux-meson-logs_artifacts:
-      path: build/meson-logs
+    meson-logs_artifacts:
+      path: build/meson-logs/*
 
 task:
   container:

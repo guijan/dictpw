@@ -20,7 +20,7 @@ incdir = include_directories('.')
 if cc.has_function('pledge', args: args, prefix: '#include <unistd.h>')
   caps_c = files('caps_pledge.c')
 elif cc.has_function('cap_enter', args: args,
-                     prefix: '#include <sys/capsicum.h') and
+                     prefix: '#include <sys/capsicum.h>') and \
      cc.has_function('procctl', args: args, prefix: '#include <sys/procctl.h>')
   caps_c = files('caps_capsicum.c')
 elif cc.has_function('sandbox_init', args: args, prefix: '#include <sandbox.h>')
