@@ -38,7 +38,7 @@ funcs = {
   'strtonum': '#include <stdlib.h>',
   'warnx': '#include <err.h>',
 }
-libbsd_dep = dependency('', required: false)
+libbsd_dep = []
 foreach func, header : funcs
   if not cc.has_function(func, prefix: header, args: args)
     libbsd_dep = dependency('libbsd-overlay')
