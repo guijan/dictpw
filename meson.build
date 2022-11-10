@@ -41,7 +41,7 @@ funcs = {
 libbsd_dep = []
 foreach func, header : funcs
   if not cc.has_function(func, prefix: header, args: args)
-    libbsd_dep = dependency('libbsd-overlay')
+    libbsd_dep = dependency('libbsd-overlay', static: get_option('static_deps'))
     break
   endif
 endforeach
