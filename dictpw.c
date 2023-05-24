@@ -14,7 +14,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <assert.h>
 #include <err.h>
 #include <errno.h>
 #include <limits.h>
@@ -60,12 +59,9 @@ main(int argc, char *argv[])
 				exit(1);
 			}
 			break;
-		case '?':
+		default:
 			usage();
 			exit(1);
-			break;
-		default:
-			assert(!"This line shouldn't be reached.");
 			break;
 		}
 	}
