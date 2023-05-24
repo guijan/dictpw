@@ -32,8 +32,8 @@ dictpw's default word count.
 There are __(23+23+10+10)^10__ or __1568336880910795776__ possible passwords in
 a random 10 character password composed of uppercase characters, lowercase
 characters, digits, and the symbols on top of each digit on the keyboard, or 18
-times less possible passwords. Dictpw by default sits between a 10 and 11
-character long password of such a scheme.
+times less possible passwords. Dictpw sits between a 10 and 11 character long
+password of such a scheme by default.
 
 ## Build instructions
 Dictpw depends on [Meson](https://mesonbuild.com/), a C compiler, and a
@@ -44,12 +44,10 @@ Install Meson, and follow the build instructions:
 meson setup build
 meson compile -C build
 ```
-By default, the dictpw build will use the system's BSD functions if they are
-present, attempt to link against an installed libbsd if they're not present, or
-fall back to building and statically linking
-[libobsd](https://github.com/guijan/libobsd) if all else fails. Whether linking
-against libbsd or falling back to libobsd are allowed can be configured from
-Meson in the usual way.
+By default, dictpw will use the system's BSD functions if they are present,
+attempt to link against an installed libbsd if they're not present,
+or fall back to building and statically linking
+[libobsd](https://github.com/guijan/libobsd) if all else fails.
 
 The binary will be in _build/dictpw_.
 
@@ -146,16 +144,16 @@ Make the installer:
 ```
 C:\Users\foo\dictpw>makensis dictpw.nsi
 ```
-The Windows on AArch8 installer can't be compiled natively because NSIS doesn't
-support AArch8 installers.
+The Windows on Arm64 installer can't be compiled natively because NSIS doesn't
+support Arm64 installers.
 
 Additionally, please note that NSIS doesn't distribute 64-bit builds of
 `makensis`, so you have to compile your own. There's no support for installing
 the 64-bit version with a 32-bit installer.
 
-#### Cross compile to Aarch8 from x64
-This is the only way to make an AArch8 installer. The installer is x64 and runs
-on AArch8 through Windows' x64 emulation, but the binaries it installs are
+#### Cross compile to Arm64 from x64
+This is the only way to make an Arm64 installer. The installer is x64 and runs
+on Arm64 through Windows' x64 emulation, but the binaries it installs are
 native.
 
 Change the build step to this:
