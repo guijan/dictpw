@@ -34,8 +34,6 @@ static int nflag = 5; /* How many words make up a password. */
 static int hflag = 0; /* Has the help flag been used? */
 
 static void usage(void);
-static void fputs_noerr(const char *, FILE *);
-static void fputc_noerr(int, FILE *);
 
 int
 main(int argc, char *argv[])
@@ -84,17 +82,16 @@ main(int argc, char *argv[])
 		exit(0);
 	}
 
-	/*
-	 * We can afford some pedantic code, but we can't afford a bad password,
-	 * so error check the printing functions.
-	 */
 	for (i = 0; i++ < nflag;) {
-		fputs_noerr(dict[arc4random_uniform(dictlen)], stdout);
+		fputs(dict[arc4random_uniform(dictlen)], stdout);
 		if (i < nflag)
-			fputc_noerr('.', stdout);
+			fputc('.', stdout);
 		else
-			fputc_noerr('\n', stdout);
+			fputc('\n', stdout);
 	}
+	fflush(stdout);
+	if (ferror(stdout))
+		errx(1, "Failed to write to stdout");
 	exit(0);
 }
 
@@ -104,20 +101,4 @@ usage(void)
 	fprintf(stderr, "usage:"
 	    "\t%s [-h] [-n %d <= words <= %d]\n", getprogname(), MINWORD,
 	    MAXWORD);
-}
-
-static void
-fputs_noerr(const char *str, FILE *stream)
-{
-	errno = 0;
-	if (fputs(str, stream) == EOF && errno != 0)
-		err(1, "fputs");
-}
-
-static void
-fputc_noerr(int c, FILE *stream)
-{
-	errno = 0;
-	if (putc(c, stream) == EOF && errno != 0)
-		err(1, "putc");
 }
