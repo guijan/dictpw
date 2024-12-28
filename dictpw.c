@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2021-2022 Guilherme Janczak <guilherme.janczak@yandex.com>
+ * Copyright (c) 2021-2022, 2024
+ *     Guilherme Janczak <guilherme.janczak@yandex.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -95,6 +96,9 @@ main(int argc, char *argv[])
 		else
 			fputc_noerr('\n', stdout);
 	}
+	errno = 0;
+	if (fflush(stdout) == EOF)
+		err(1, "fflush");
 	exit(0);
 }
 
@@ -110,7 +114,7 @@ static void
 fputs_noerr(const char *str, FILE *stream)
 {
 	errno = 0;
-	if (fputs(str, stream) == EOF && errno != 0)
+	if (fputs(str, stream) == EOF)
 		err(1, "fputs");
 }
 
@@ -118,6 +122,6 @@ static void
 fputc_noerr(int c, FILE *stream)
 {
 	errno = 0;
-	if (putc(c, stream) == EOF && errno != 0)
+	if (putc(c, stream) == EOF)
 		err(1, "putc");
 }
