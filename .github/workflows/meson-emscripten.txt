@@ -1,0 +1,21 @@
+[binaries]
+c = 'emcc'
+cpp = 'em++'
+ar = 'emar'
+exe_wrapper = 'node'
+
+[properties]
+sys_root = '/usr/share/emscripten/system'
+shared_lib_suffix = 'js'
+static_lib_suffix = 'js'
+shared_module_suffix = 'js'
+exe_suffix = 'js'
+
+[built-in options]
+c_link_args = ['-s', 'EXPORTED_FUNCTIONS=_main,_malloc']
+
+[host_machine]
+system = 'emscripten'
+cpu_family = 'x86'
+cpu = 'x86_64'
+endian = 'little'

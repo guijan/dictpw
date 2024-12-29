@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022 Guilherme Janczak <guilherme.janczak@yandex.com>
+# Copyright (c) 2021-2022, 2024 Guilherme Janczak <guilherme.janczak@yandex.com>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -13,7 +13,7 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 project('dictpw', 'c', version: '1.2.0', license: 'ISC',
-        default_options: ['c_std=c99', 'b_lto=true', 'warning_level=3'])
+        default_options: ['c_std=c99', 'warning_level=3'])
 
 # Makes all functions, including BSD functions, visible on GNU.
 args = ['-D_GNU_SOURCE']
@@ -41,7 +41,8 @@ funcs = {
 libbsd_dep = []
 foreach func, header : funcs
   if not cc.has_function(func, prefix: header, args: args)
-    libbsd_dep = dependency('libbsd-overlay', static: get_option('static_deps'))
+    libbsd_dep = dependency('libbsd-overlay',
+                            default_options: 'default_library=static')
     break
   endif
 endforeach

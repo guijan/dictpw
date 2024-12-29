@@ -1,0 +1,3 @@
+[binaries]
+c = ['clang-cl', '--target=aarch64-win32-msvc']
+cpp = c

@@ -1,3 +1,6 @@
 [binaries]
 c = 'cl'
 c_ld = 'link'
+cpp = c
+cpp_ld = c_ld
+ar = 'lib'

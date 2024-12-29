@@ -1,0 +1,7 @@
+[binaries]
+c = 'clang-cl'
+c_ld = 'lld-link'
+cpp = c
+cpp_ld = c_ld
+ar = 'llvm-lib'
+strip = 'llvm-strip'
