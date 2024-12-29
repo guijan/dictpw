@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Guilherme Janczak <guilherme.janczak@yandex.com>
+# Copyright (C) 2022, 2024 Guilherme Janczak <guilherme.janczak@yandex.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
@@ -41,23 +41,9 @@ task:
   << : *common_script
 
 task:
-  container:
-    image: kcubeterm/termux:x86_64
-    kvm: true
-  name: bionic
-  setup_script:
-    # termux-docker only statically resolves DNS.
-    - printf '%s\n' 'objects.githubusercontent.com' >>
-        /system/etc/static-dns-hosts.txt
-    - /system/bin/update-static-dns
-    - pkg install -y ninja clang python git
-    - pip install meson
-  << : *common_script
-
-task:
   freebsd_instance:
     # Keep updated with newest release from https://www.freebsd.org/releases/
-    image: freebsd-13-1-release-amd64
+    image: freebsd-14-2-release-amd64-ufs
   name: freebsd
   setup_script:
     - pkg install -y meson ninja gcc
