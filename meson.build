@@ -13,7 +13,8 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 project('dictpw', 'c', version: '1.2.0', license: 'ISC',
-        default_options: ['c_std=c99', 'warning_level=3'])
+        default_options: ['c_std=c99', 'warning_level=3'],
+        meson_version: '>=1.4.0')
 
 # Makes all functions, including BSD functions, visible on GNU.
 args = ['-D_GNU_SOURCE']
@@ -38,7 +39,7 @@ funcs = {
   'strtonum': '#include <stdlib.h>',
   'warnx': '#include <err.h>',
 }
-libbsd_dep = []
+libbsd_dep = dependency('', required: false)
 foreach func, header : funcs
   if not cc.has_function(func, prefix: header, args: args)
     libbsd_dep = dependency('libbsd-overlay',
@@ -103,18 +104,53 @@ if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
 
   # Put copies of the license and the README with DOS newlines in the build
   # directory too.
-  custom_target('license',
-                command: [unix2dos],
-                input: ['LICENSE.md'],
-                feed: true,
-                output: ['LICENSE.txt'],
-                capture: true,
-                build_by_default: true)
-  custom_target('readme',
-                command: [unix2dos],
-                input: ['README.md'],
-                feed: true,
-                output: ['README.txt'],
-                capture: true,
-                build_by_default: true)
+  license = custom_target('license',
+                         command: [unix2dos],
+                         input: ['LICENSE.md'],
+                         feed: true,
+                         output: ['LICENSE.txt'],
+                         capture: true,
+                         build_by_default: true)
+  readme = custom_target('readme',
+                         command: [unix2dos],
+                         input: ['README.md'],
+                         feed: true,
+                         output: ['README.txt'],
+                         capture: true,
+                         build_by_default: true)
+
+  fs = import('fs')
+  inst_cmd = [find_program('makensis'), '-NOCD', 
+              '-INPUTCHARSET', 'UTF8', '-OUTPUTCHARSET', 'UTF8',
+              '-XSetCompressor /SOLID /FINAL lzma',
+              '-DMESON=true',
+              '-DOUTFILE=setup-dictpw.exe',
+              '-DEXEFILE=' + fs.name(dictpw.full_path()),
+              '-DMANFILE=' + fs.name(man.full_path()),
+              '-DLICENSE=' + fs.name(license.full_path()),
+              '-DREADME=' + fs.name(readme.full_path())]
+  if libbsd_dep.found() and libbsd_dep.type_name() == 'internal'
+    inst_cmd += '-DLIBOBSD_LICENSE=true'
+  endif
+  # Programs built in Cygwin and MSYS2's MSYS environment are linked against
+  # a special DLL with their implementations of Unix inside, distribute it.
+  dll_copy = []
+  if host_machine.system() == 'cygwin'
+    dlls = ['/usr/bin/msys-2.0.dll', '/bin/cygwin1.dll']
+    found = false
+    foreach dll : dlls
+      if fs.is_file(dll)
+        dll_copy += fs.copyfile(dll)
+        inst_cmd += '-DMSYS_DLL=' + fs.name(dll)
+        found = true
+        break
+      endif
+    endforeach
+    if not found
+      error('cygwin/msys2 DLL not found')
+    endif
+  endif
+  run_target('installer',
+             command: inst_cmd + ['--', files('src/dictpw.nsi')],
+             depends: [dictpw, man, license, readme, dll_copy])
 endif

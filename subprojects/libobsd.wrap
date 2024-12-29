@@ -1,6 +1,6 @@
 [wrap-git]
 url = https://github.com/guijan/libobsd
-revision = 09bbc61e0e178ae8bf9fbf382c5800e0efdd5165
+revision = 1a6153692545c6bbd1dd634e05988126b510235e
 depth = 1
 
 [provide]

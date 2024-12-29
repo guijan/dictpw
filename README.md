@@ -27,151 +27,103 @@ J#2%Q*PDfNI
 ```
 
 ## Analysis
-A password scheme's security can be measured by the number of distinct passwords 
-it can generate. To keep these incredibly large numbers intelligible, they're 
-given as exponents of 2, or bits. dictpw's default password length can generate 
+A password scheme's security can be measured by the number of distinct passwords
+it can generate. To keep these incredibly large numbers intelligible, they're
+given as exponents of 2, or bits. dictpw's default password length can generate
 __7776^4__ distinct passwords, or __52 bits__ of security. Based on very
-conservative estimates made using [my calculator](src/sec_pw_bits.bc), a 100-day 
-attempt to crack such a password with 500000 USD budget for hardware (not 
+conservative estimates made using [my calculator](src/sec_pw_bits.bc), a 100-day
+attempt to crack such a password with 500000 USD budget for hardware (not
 counting electricity and labor) would have a 25% chance of succeeding in 2024.
 
 The reasoning for these numbers is included in the calculator's source code.
 
-## Build instructions
-Dictpw depends on [Meson](https://mesonbuild.com/), a C compiler, and a
-POSIX-like or Windows operating system.
-
-Install Meson, and follow the build instructions:
-```sh
-meson setup build
-meson compile -C build
-```
-By default, dictpw will use the system's BSD functions if they are present,
-attempt to link against an installed libbsd if they're not present,
-or fall back to building and statically linking
-[libobsd](https://github.com/guijan/libobsd) if all else fails.
-
-The binary will be in _build/dictpw_.
-
-## Custom dictionary
-By default, dictpw uses the EFF's
-[long word list](https://www.eff.org/deeplinks/2016/07/new-wordlists-random-passphrases).
-You can specify a custom dictionary by setting the __dict__ option with Meson. A
-dictionary is a file with one word per line.
-
 ## Example
 ```console
-foo@bar ~
 $ build/dictpw
 canary.gnat.uncross.waking
-foo@bar ~
 $ build/dictpw -n3
 chummy.iguana.outsider
 ```
 
-## Windows support
-### Build from MSYS2
+## Compiling
+### Linux, macOS, other Unix systems, and HaikuOS
+Dictpw depends on [Meson](https://mesonbuild.com/) and a C compiler.
+[Git](https://git-scm.com/) is one method to acquire the source code.
+Some systems optionally depend on either libbsd or libobsd, if neither is
+present, it's automatically downloaded and statically linked into dictpw.
+
+Acquire the source code with git and enter its directory:
+```console
+$ git clone --depth 1 https://github.com/guijan/dictpw
+$ cd dictpw
+```
+
+Compile the program:
+```console
+$ meson setup build && meson compile -C build
+```
+The binary will be in _build/dictpw_.
+
+### Windows
+#### MSYS2
 Install [MSYS2](https://www.msys2.org/) and follow the installation
 instructions; make sure to read the
 [MSYS2-Introduction](https://www.msys2.org/wiki/MSYS2-introduction/) page after
 completing the installation instructions-failure to do so may break your MSYS2
 installation.
 
-The rest of this section describes a MINGW64 build.
+The instructions below are the same for the UCRT64 (x64 binaries) and MINGW32
+(x86 binaries) environments. Other environments aren't supported for end users.
 
 Install the dependencies:
 ```console
-foo@bar MSYS ~
-$ pacman --noconfirm -S git groff mingw-w64-x86_64-gcc mingw-w64-x86_64-meson \
-    mingw-w64-x86_64-ninja mingw-w64-x86_64-nsis mingw-w64-x86_64-dos2unix
+foo@bar UCRT64 ~
+$ pacboys -S --noconfirm git: dos2unix: groff: gcc:p meson: ninja: nsis:
 ```
-Now start the MINGW64 environment, and enter the directory to which you
-downloaded the dictpw sources.
-Produce the installer for a release build:
+
+Acquire the source code with git and enter its directory:
 ```console
-foo@bar MINGW64 ~/dictpw
-$ meson setup build
-foo@bar MINGW64 ~/dictpw
-$ sh dictpw_installer.sh
+foo@bar UCRT64 ~
+$ git clone --depth 1 https://github.com/guijan/dictpw
+foo@bar UCRT64 ~
+$ cd dictpw
 ```
 
-#### MSYS environment build instructions
-Building releases with the MSYS compatibility layer is also supported.
-The process is the same, except the dependencies are different:
+Compile the installer:
 ```console
-foo@bar MSYS
-$ pacman --noconfirm -S dos2unix git groff gcc meson ninja mingw-w64-x86_64-nsis
+foo@bar UCRT64 ~/dictpw
+$ meson setup build && meson compile installer -C build
 ```
-Obviously, you don't need to enter a different environment to build the MSYS
-version.
+The installer will be at _build/setup-dictpw.exe_, and the program itself will
+be at _build/dictpw.exe_.
 
-#### CLANG64 environment build instructions
-The CLANG64 build process, too, only differs from the MINGW64 build process in
-the dependency list:
-```console
-foo@bar MSYS
-$ pacman --noconfirm -S git groff mingw-w64-clang-x86_64-clang \
-    mingw-w64-clang-x86_64-dos2unix mingw-w64-clang-x86_64-meson \
-    mingw-w64-clang-x86_64-ninja mingw-w64-x86_64-nsis
-```
-Make sure to enter the CLANG64 environment after installing the dependencies and
-before following the build instructions.
-
-Notice that no matter the MSYS2 environment you're building dictpw in, the
-dependencies are always the environment's version of the same packages-except
-you must install the MINGW64 NSIS for environments missing a NSIS package.
-
-#### Others
-Dictpw builds on all of
-[MSYS2's environments](https://www.msys2.org/docs/environments/).
-MINGW64 and MINGW32 are the most stable MSYS2 environments, therefore they are
-the only supported environments. The build is kept in working order in all the
-others purely for the sake of portability.
-
-### Build from Visual Studio
-#### Native build
-Open up `cmd` and install the dependencies via
+#### Visual Studio
+Open up `powershell.exe` and install the dependencies via
 [Chocolatey](https://chocolatey.org/):
+```console
+PS C:\Users\foo> choco install -y groff nsis meson git
+PS C:\Users\foo> refreshenv
 ```
-C:\Users\foo>choco install -y groff strawberryperl nsis meson
-C:\Users\foo>refreshenv
-```
-`cd` into the directory to which you downloaded the sources and build the
-project:
-```
-C:\Users\foo\dictpw>meson setup --backend=vs build
-C:\Users\foo\dictpw>meson compile -C build
-```
-Make the installer:
-```
-C:\Users\foo\dictpw>makensis src/dictpw.nsi
-```
-The Windows on Arm64 installer can't be compiled natively because NSIS doesn't
-support Arm64 installers.
 
-Additionally, please note that NSIS doesn't distribute 64-bit builds of
-`makensis`, so you have to compile your own. There's no support for installing
-the 64-bit version with a 32-bit installer.
-
-#### Cross compile to Arm64 from x64
-This is the only way to make an Arm64 installer. The installer is x64 and runs
-on Arm64 through Windows' x64 emulation, but the binaries it installs are
-native.
-
-Change the build step to this:
+Acquire the source code with git and enter its directory:
+```console
+PS C:\Users\foo> git clone --depth 1 https://github.com/guijan/dictpw
+PS C:\Users\foo> refreshenv
+PS C:\Users\foo> cd dictpw
 ```
-C:\Users\foo\dictpw>meson setup --backend=vs ^
-    --cross-file=.github/workflows/meson-vs-aarch64.txt build
-C:\Users\foo\dictpw>meson compile -C build
+
+Compile the installer:
+```console
+PS C:\Users\foo\dictpw> meson setup build && meson compile installer -C build
 ```
 
 ## Windows example
 Unfortunately, Microsoft hasn't provided a proper way to install command line
 utilities to Windows. The installer registers the .exe in the Windows Registry
 which allows running the program from `cmd` using the `start` command:
-```
+```console
 C:\Users\foo>start /b /wait dictpw
-unusual.skewer.swirl.whinny.rogue
+unusual.skewer.swirl.whinny
 ```
 Keep in mind the /b and /wait flags are necessary: they tell cmd.exe not to
 start another cmd.exe, and to wait for the program's exit.
@@ -179,3 +131,9 @@ start another cmd.exe, and to wait for the program's exit.
 ## Windows documentation
 The installer also installs the manual. Check _dictpw.txt_ inside the
 installation directory.
+
+## Custom dictionary
+By default, dictpw uses the EFF's
+[long word list](https://www.eff.org/deeplinks/2016/07/new-wordlists-random-passphrases).
+You can specify a custom dictionary by setting the __dict__ option with Meson. A
+dictionary is a file with one word per line.
