@@ -179,7 +179,7 @@ jobs:
       - name: test
         run: meson test -C build
       - name: installer
-        run: ./dictpw_installer.sh -o 'build\setup-dictpw-${{matrix.sys}}.exe'
+        run: src/dictpw_installer.sh -o 'build\setup-dictpw-${{matrix.sys}}.exe'
       - uses: actions/upload-artifact@v4.5.0
         if: always()
         with:
@@ -254,8 +254,8 @@ jobs:
         run: meson test -C build
       - name: inst
         run: |
-          $out = "build\setup-dictpw-vs-${{matrix.cc}}-${{matrix.arch}}.exe"
-          makensis -DOUTFILE="$out" dictpw.nsi
+          $out = "..\build\setup-dictpw-vs-${{matrix.cc}}-${{matrix.arch}}.exe"
+          makensis -DOUTFILE="$out" src/dictpw.nsi
           ls build/
       - uses: actions/upload-artifact@v4.5.0
         if: always()

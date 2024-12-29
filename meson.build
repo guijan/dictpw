@@ -48,7 +48,7 @@ foreach func, header : funcs
 endforeach
 
 gen_dict = executable('gen_dict',
-                      'gen_dict.c',
+                      'src/gen_dict.c',
                       native: true)
 gen_dict_h = custom_target('gen_dict',
                            output: 'gen_dict.h',
@@ -59,8 +59,8 @@ gen_dict_h = custom_target('gen_dict',
                            command: gen_dict)
 
 dictpw = executable('dictpw',
-                    'dict.c',
-                    'dictpw.c',
+                    'src/dict.c',
+                    'src/dictpw.c',
                     caps_c,
                     gen_dict_h,
                     install: true,
@@ -69,7 +69,7 @@ dictpw = executable('dictpw',
                     win_subsystem: 'console')
 subdir('test')
 
-install_man('dictpw.1')
+install_man('src/dictpw.1')
 
 if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
   # Build a .txt version of the manual too. For producing the installer.
@@ -78,7 +78,7 @@ if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
   man_groff = custom_target('man_groff',
                             command: [find_program('groff'), '-mdoc', '-Tascii',
                                       '-Z'],
-                            input: [files('dictpw.1')],
+                            input: [files('src/dictpw.1')],
                             feed: true,
                             output: ['dictpw.groff'],
                             capture: true)

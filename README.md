@@ -1,5 +1,5 @@
 <!--
-Copyright (c) 2021-2022 Guilherme Janczak <guilherme.janczak@yandex.com>
+Copyright (c) 2021-2022, 2024 Guilherme Janczak <guilherme.janczak@yandex.com>
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -15,25 +15,27 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 -->
 
 # Dictpw - generate password from dictionary
-Dictpw randomly picks 5 words off a 7776-word dictionary and prints them with a
+Dictpw randomly picks 4 words off a 7776-word dictionary and prints them with a
 dot between each word. This is the
 [Diceware](https://en.wikipedia.org/wiki/Diceware) method of password generation
 from the command line.
 
 Which of the following 2 passwords is easier to memorize?
 ```
-computer.stuffy.dexterity.carve.wife
+computer.stuffy.dexterity.carve
 J#2%Q*PDfNI
 ```
 
 ## Analysis
-There are __7776^5__ or __28430288029929701376__ possible passwords using
-dictpw's default word count.
-There are __(23+23+10+10)^10__ or __1568336880910795776__ possible passwords in
-a random 10 character password composed of uppercase characters, lowercase
-characters, digits, and the symbols on top of each digit on the keyboard, or 18
-times less possible passwords. Dictpw sits between a 10 and 11 character long
-password of such a scheme by default.
+A password scheme's security can be measured by the number of distinct passwords 
+it can generate. To keep these incredibly large numbers intelligible, they're 
+given as exponents of 2, or bits. dictpw's default password length can generate 
+__7776^4__ distinct passwords, or __52 bits__ of security. Based on very
+conservative estimates made using [my calculator](src/sec_pw_bits.bc), a 100-day 
+attempt to crack such a password with 500000 USD budget for hardware (not 
+counting electricity and labor) would have a 25% chance of succeeding in 2024.
+
+The reasoning for these numbers is included in the calculator's source code.
 
 ## Build instructions
 Dictpw depends on [Meson](https://mesonbuild.com/), a C compiler, and a
@@ -142,7 +144,7 @@ C:\Users\foo\dictpw>meson compile -C build
 ```
 Make the installer:
 ```
-C:\Users\foo\dictpw>makensis dictpw.nsi
+C:\Users\foo\dictpw>makensis src/dictpw.nsi
 ```
 The Windows on Arm64 installer can't be compiled natively because NSIS doesn't
 support Arm64 installers.

@@ -20,22 +20,22 @@
 !include "FileFunc.nsh"
 
 !ifndef EXEFILE
-	!define EXEFILE "build\dictpw.exe"
+	!define EXEFILE "..\build\dictpw.exe"
 !endif
 
 !ifndef DOCFILE
-	!define DOCFILE "build\dictpw.txt"
+	!define DOCFILE "..\build\dictpw.txt"
 !endif
 
 !ifndef OUTFILE
-	!define OUTFILE "build\setup-dictpw.exe"
+	!define OUTFILE "..\build\setup-dictpw.exe"
 !endif
 
-!define LIBOBSD_LICENSE	"build\subprojects\libobsd\LICENSE_libobsd.txt"
+!define LIBOBSD_LICENSE	"..\build\subprojects\libobsd\LICENSE_libobsd.txt"
 
 !define MUI_DIRECTORYPAGE_VARIABLE "$INSTDIR"
 !include "MUI2.nsh"
-!insertmacro MUI_PAGE_LICENSE "LICENSE.md"
+!insertmacro MUI_PAGE_LICENSE "..\LICENSE.md"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_UNPAGE_DIRECTORY
@@ -59,11 +59,11 @@ Section
 !ifdef MSYS
 	File /oname=bin\msys-2.0.dll "${MSYS}"
 !endif
-        File "build\LICENSE.txt"
+        File "..\build\LICENSE.txt"
 !if /FileExists "${LIBOBSD_LICENSE}"
 	File "${LIBOBSD_LICENSE}"
 !endif
-        File "build\README.txt"
+        File "..\build\README.txt"
         File "${DOCFILE}"
         WriteUninstaller "$INSTDIR\uninstall.exe"
 

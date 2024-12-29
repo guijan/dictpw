@@ -26,12 +26,14 @@
 #include "dict.h"
 #include <caps.h>
 
+/* Values based on conservative calculations in sec_pw_bits.bc */
 enum {
-	MINWORD = 4,
-	MAXWORD = 10,
+	MINWORD = 3,
+	DEFWORD = 4,
+	MAXWORD = 8,
 };
 
-static int nflag = 5; /* How many words make up a password. */
+static int nflag = DEFWORD; /* How many words make up a password. */
 static int hflag = 0; /* Has the help flag been used? */
 
 static void usage(void);

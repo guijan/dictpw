@@ -1,6 +1,6 @@
 #!/bin/sh -evx
 
-# Copyright (c) 2022 Guilherme Janczak <guilherme.janczak@yandex.com>
+# Copyright (c) 2022, 2024 Guilherme Janczak <guilherme.janczak@yandex.com>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -17,7 +17,7 @@
 OUTFILE='-DNULL'
 while getopts o: o; do
 case "$o" in
-	o) OUTFILE="-DOUTFILE=${OPTARG}";;
+	o) OUTFILE="-DOUTFILE=../${OPTARG}";;
 	*) exit 1;;
 esac
 done
@@ -34,6 +34,7 @@ MSYS='-DNULL'
 if [ "$MSYSTEM" = "MSYS" ]; then
 	msysdll='build\msys-2.0.dll'
 	cp /usr/bin/msys-2.0.dll "$msysdll"
+	msysdll="../$msysdll"
 	MSYS="-DMSYS=$msysdll"
 fi
 
@@ -47,4 +48,4 @@ fi
 
 # The odd quoting is because the whole command line needs to be passed as a
 # single argument to the subshell.
-$subsh "makensis '$MSYS' '$OUTFILE' dictpw.nsi"
+$subsh "makensis '$MSYS' '$OUTFILE' src/dictpw.nsi"

@@ -1,0 +1,102 @@
+#!/usr/bin/bc -l
+
+# Copyright (c) 2024 Guilherme Janczak <guilherme.janczak@yandex.com>
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+# sec_pw_bits: calculate bits of security needed for secure passwords
+#
+# Meaning of parameters:
+# d = The deadline, in seconds, for the bruteforce attempt.
+# s = Acceptable chance of success of the bruteforce attempt in %.
+# r = number of hashes per second of the best hashing machine
+# b = how much money is available to spend on hashing machines.
+# c = the price of a single hashing machine.
+define sec_pw_bits(d, s, r, b, c){
+	auto o, t
+	o = scale
+	scale = 8 # Arbitrary, for performance.
+	t = l(d * 100/s * r * b/c) / l(2)
+	scale = 1
+	t = t/1
+	scale = o
+	return t
+}
+
+define days(n){
+	return (60*60*24*n)
+}
+
+define terahash(n){
+	return (n*10^9)
+}
+
+# Reasonable defaults:
+d = days(96) # https://en.wikipedia.org/wiki/DESCHALL_Project took 96 days.
+s = 25 # Arbitrary.
+# Budget of https://en.wikipedia.org/wiki/EFF_DES_cracker was 250000 USD in
+# 1998. Value is scaled to 2024 according to inflation using Google.
+b = 479036
+
+# Reasonable values for plain sha256 hashing:
+# Antminer S19 XP Hyd bitcoin hash rate, i.e. sha256 rate. Google says it's the
+# fastest bitcoin miner today.
+r = terahash(255)
+c = 5000 # Cost of Antminer according to Google.
+
+"This program estimates how many bits of security a password needs to be safe."
+# A newline.
+"
+"
+"It differentiates between services and devices. Services are run by others,"
+"
+"
+"and assumed to be incompetent-they use a plain sha256 to store passwords."
+"
+"
+"Devices are systems you own, and assumed to be competent-they use some kind"
+"
+"
+"of password expansion algorithm to store passwords."
+"
+
+"
+"(d)eadline in seconds = "; d
+"(s)uccess chance % = "; s
+"hardware hashes pe(r) second = "; r
+"hardware (b)udget = "; b
+"hardware (c)ost = "; c
+"services: sec_pw_bits(d, s, r, b, c) = "; sec_pw_bits(d, s, r, b, c)
+"
+"
+
+# Reasonable values for key expansion algorithm.
+# /usr/src/lib/libc/crypt.c on OpenBSD 7.5 says the system uses bcrypt and
+# benchmarks rounds looking for a value between 6 and 16 rounds that takes
+# around 0.1s. My system uses 10 rounds.
+# https://gist.github.com/epixoip/63c2ad11baf7bbd57544 says 133KH/s for 8x Titan
+# X and bcrypt 5 rounds. Each additional round doubles work, so we're looking at
+# 4KH/s at 10 rounds. Unfortunately, that result is from 2015, and it's 2024,
+# but we can eyeball progress with Moore's Law, so scale the result based on the
+# year.
+# 133064 * 2^((year-2015)/2 - (rounds-5))
+r = 133064 * 2^((2024-2015) - (10-5))/2
+c = 999*8 # GTX Titan X MSRP at launch.
+"hardware hashes pe(r) second = "; r
+"hardware (c)ost = "; c
+"devices : sec_pw_bits(d, s, r, b, c) = "; sec_pw_bits(d, s, r, b, c)
+"
+"
+"You may change d, s, r, b, and c around and call sec_pw_bits() again."
+"
+"
