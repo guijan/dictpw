@@ -63,10 +63,10 @@ dictionary is a file with one word per line.
 ```console
 foo@bar ~
 $ build/dictpw
-canary.gnat.uncross.waking.expose
+canary.gnat.uncross.waking
 foo@bar ~
-$ build/dictpw -n4
-chummy.iguana.outsider.yearling
+$ build/dictpw -n3
+chummy.iguana.outsider
 ```
 
 ## Windows support
