@@ -41,6 +41,13 @@
     !define LIBOBSD_LICENSE "subprojects\libobsd\LICENSE_libobsd.txt"
 !endif
 # MSYS_DLL is optional, only needed on msys2 and Cygwin.
+# !ifndef MSYS_DLL !error "..." !endif
+!ifndef PROJECT_VERSION
+    !error "Project version unspecified"
+!endif
+!ifndef VI_VERSION
+    !error "VI version unspecified"
+!endif
 
 !define MUI_DIRECTORYPAGE_VARIABLE "$INSTDIR"
 !include "MUI2.nsh"
@@ -55,6 +62,13 @@ OutFile "${OUTFILE}"
 InstallDir "$PROGRAMFILES\dictpw"
 RequestExecutionLevel admin
 showinstdetails show
+
+VIAddVersionKey /LANG=0 "ProductName" "dictpw"
+VIAddVersionKey /LANG=0 "LegalCopyright" "(c) Guilherme Janczak"
+VIAddVersionKey /LANG=0 "FileDescription" "generate password from dictionary"
+VIProductVersion "${VI_VERSION}"
+VIAddVersionKey /LANG=0 "FileVersion" "${PROJECT_VERSION}"
+VIAddVersionKey /LANG=0 "ProductVersion" "${PROJECT_VERSION}"
 
 Section
     # Uninstalling previous versions allows changing the installed files

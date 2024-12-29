@@ -128,7 +128,14 @@ if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
               '-DEXEFILE=' + fs.name(dictpw.full_path()),
               '-DMANFILE=' + fs.name(man.full_path()),
               '-DLICENSE=' + fs.name(license.full_path()),
-              '-DREADME=' + fs.name(readme.full_path())]
+              '-DREADME=' + fs.name(readme.full_path()),
+              # This goes into the string file information block and is 
+              # free-form.
+              '-DPROJECT_VERSION=' + meson.project_version(),
+              # This goes into the fixed file information block and is in the 
+              # form of 4 integers separated by a dot, e.g. '1.2.3.4'
+              # We append '.0' to our SemVer to match that format.
+              '-DVI_VERSION=' + meson.project_version() + '.0' ]
   if libbsd_dep.found() and libbsd_dep.type_name() == 'internal'
     inst_cmd += '-DLIBOBSD_LICENSE=true'
   endif
