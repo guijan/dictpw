@@ -86,8 +86,6 @@ Section
 !ifdef LIBOBSD_LICENSE
     File "${LIBOBSD_LICENSE}"
 !endif
-# Read: If we're building for the MSYS2 or Cygwin environments, distribute their
-# DLLs.
     WriteUninstaller "$INSTDIR\uninstall.exe"
 
     # Add/Remove programs registry
