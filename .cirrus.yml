@@ -33,7 +33,7 @@ common_template: &common_script
 
 task:
   container:
-    image: artixlinux/base
+    image: artixlinux/artixlinux
     kvm: true
   name: artix (bleeding edge packages)
   setup_script:
