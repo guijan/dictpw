@@ -78,7 +78,7 @@ The instructions below are the same for the UCRT64 (x64 binaries) and MINGW32
 Install the dependencies:
 ```console
 foo@bar UCRT64 ~
-$ pacboys -S --noconfirm git: dos2unix: groff: gcc:p meson: ninja: nsis:
+$ pacboys -S --noconfirm git: dos2unix: groff: gcc:p meson:p ninja:p nsis:p
 ```
 
 Acquire the source code with git and enter its directory:
