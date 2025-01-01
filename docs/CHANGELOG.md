@@ -7,3 +7,7 @@ Changes in dictpw master:
 - Fix broken cross compiling
 - Integrate the installer with Meson
 - Change the installer's compression algorithm to LZMA to improve ratios
+- Change to Inno Setup for the Windows installer for improved ARM support
+- Set documentation read only on Windows to prevent accidental modification
+- Add a portable install option to the Windows installer
+- Add an option to add the program to $env:PATH on Windows

@@ -1,6 +1,6 @@
 .\"	$OpenBSD: mdoc.template,v 1.15 2014/03/31 00:09:54 dlg Exp $
 .\"
-.\" Copyright (c) 2021-2022, 2024
+.\" Copyright (c) 2021-2022, 2024-2025
 .\"     Guilherme Janczak <guilherme.janczak@yandex.com
 .\"
 .\" Permission to use, copy, modify, and distribute this software for any
@@ -43,6 +43,25 @@ The program rejects values that are nonsensically small or large.
 .El
 .Sh EXIT STATUS
 .Ex -std
+.Sh EXAMPLES
+Unix usage:
+.Dl $ dictpw
+.Pp
+Windows users can always call
+.Nm
+using the the App Paths shortcut.
+PowerShell:
+.Dl PS C:\eUsers\efoo> Start-Process -NoNewWindow -Wait dictpw
+Batch:
+.Dl C:\eUsers\efoo> start /b /wait dictpw
+.Pp
+If a Windows installation of
+.Nm
+was done via Chocolatey, or if
+.Em Add to $env:PATH
+(the default) was selected during installation,
+the program can be called normally:
+.Dl PS C:\eUsers\efoo> dictpw
 .Sh STANDARDS
 .Lk https://www.eff.org/files/2016/07/18/eff_large_wordlist.txt EFF's long word list .
 .Sh AUTHORS

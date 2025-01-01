@@ -1,4 +1,5 @@
-# Copyright (c) 2021-2022, 2024 Guilherme Janczak <guilherme.janczak@yandex.com>
+# Copyright (c) 2021-2022, 2024-2025
+#     Guilherme Janczak <guilherme.janczak@yandex.com>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -119,25 +120,24 @@ if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
                          capture: true,
                          build_by_default: true)
 
+  inst_cmd = [find_program('iscc'),
+              '-DBUILDDIR=' + meson.current_build_dir(),
+              '-Fsetup-dictpw',
+              '-DMESON',
+              '-DNAME=' + meson.project_name(),
+              '-DVERSION=' + meson.project_version(),
+              '-DURL=https://github.com/guijan/dictpw',
+              # Inno Setup's ExtractFileName (basename function) expects the
+              # Windows path separator ('\'), but Meson uses the Unix path
+              # separator ('/'), so create a basename now.
+              '-DEXEFILE=' + dictpw.full_path(),
+              '-DLICENSE=' + license.full_path(),
+              '-DMANFILE=' + man.full_path(),
+              '-DREADME=' + readme.full_path(),]
+
   fs = import('fs')
-  inst_cmd = [find_program('makensis'), '-NOCD', 
-              '-INPUTCHARSET', 'UTF8', '-OUTPUTCHARSET', 'UTF8',
-              '-XSetCompressor /SOLID /FINAL lzma',
-              '-DMESON=true',
-              '-DOUTFILE=setup-dictpw.exe',
-              '-DEXEFILE=' + fs.name(dictpw.full_path()),
-              '-DMANFILE=' + fs.name(man.full_path()),
-              '-DLICENSE=' + fs.name(license.full_path()),
-              '-DREADME=' + fs.name(readme.full_path()),
-              # This goes into the string file information block and is 
-              # free-form.
-              '-DPROJECT_VERSION=' + meson.project_version(),
-              # This goes into the fixed file information block and is in the 
-              # form of 4 integers separated by a dot, e.g. '1.2.3.4'
-              # We append '.0' to our SemVer to match that format.
-              '-DVI_VERSION=' + meson.project_version() + '.0' ]
   if libbsd_dep.found() and libbsd_dep.type_name() == 'internal'
-    inst_cmd += '-DLIBOBSD_LICENSE=true'
+    inst_cmd += '-DLIBOBSD_LICENSE=subprojects/libobsd/LICENSE_libobsd.txt'
   endif
   # Programs built in Cygwin and MSYS2's MSYS environment are linked against
   # a special DLL with their implementations of Unix inside, distribute it.
@@ -157,7 +157,27 @@ if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
       error('cygwin/msys2 DLL not found')
     endif
   endif
+  # Mapping between:
+  # https://mesonbuild.com/Reference-tables.html
+  # https://jrsoftware.org/ishelp/index.php?topic=archidentifiers
+  meson_to_iscc_arch = {
+    'arm': 'arm32compatible',
+    'aarch64': 'arm64',
+    'x86_64': 'x64compatible',
+    'x86': 'x86compatible'
+  }
+  inst_cmd += '-DARCH=' + meson_to_iscc_arch[host_machine.cpu_family()]
+  if cc.get_id() == 'msvc'
+    # https://learn.microsoft.com/en-us/visualstudio/releases/2022/compatibility#build-apps-that-run-on-windows-clients
+    winmin = '6.1sp1'
+  else
+    # https://www.msys2.org/docs/windows_support/
+    # Minimum package requirement, not minimum toolchain requirement, I'm not
+    # going to bother figuring out which is right, so use the highest one.
+    winmin = '6.3'
+  endif
+  inst_cmd += '-DWIN_MIN=' + winmin
   run_target('installer',
-             command: inst_cmd + ['--', files('src/dictpw.nsi')],
+             command: inst_cmd + files('src/dictpw.iss'),
              depends: [dictpw, man, license, readme, dll_copy])
 endif

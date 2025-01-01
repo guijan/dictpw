@@ -117,17 +117,6 @@ Compile the installer:
 PS C:\Users\foo\dictpw> meson setup build && meson compile installer -C build
 ```
 
-## Windows example
-Unfortunately, Microsoft hasn't provided a proper way to install command line
-utilities to Windows. The installer registers the .exe in the Windows Registry
-which allows running the program from `cmd` using the `start` command:
-```console
-C:\Users\foo>start /b /wait dictpw
-unusual.skewer.swirl.whinny
-```
-Keep in mind the /b and /wait flags are necessary: they tell cmd.exe not to
-start another cmd.exe, and to wait for the program's exit.
-
 ## Windows documentation
 The installer also installs the manual. Check _dictpw.txt_ inside the
 installation directory.

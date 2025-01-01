@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024 Guilherme Janczak <guilherme.janczak@yandex.com>
+# Copyright (c) 2022-2025 Guilherme Janczak <guilherme.janczak@yandex.com>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -168,19 +168,13 @@ jobs:
           path-type: strict
           pacboy: |
             gcc:p meson:p ninja:p dos2unix: git: groff:
-        # Some environments have no nsis, so we use mingw-w64's.
-      - name: env-lacks-nsis
-        if: matrix.sys == 'msys' || matrix.sys == 'clang64'
-        run: pacman -S --noconfirm --needed mingw-w64-x86_64-nsis
-      - name: env-has-nsis
-        if: matrix.sys != 'msys' && matrix.sys != 'clang64'
-        run: pacboy -S --noconfirm --needed nsis:p
       - uses: actions/checkout@v4.2.2
       - name: build
         run: |
-          if [ "$MSYSTEM" = "MSYS" ] || [ "$MSYSTEM" = "CLANG64" ]; then
-            PATH="${PATH}:/mingw64/bin"
-          fi
+          inno="$(cmd //c 'echo %ProgramFiles(x86)%')\\Inno Setup 6\\"
+          inno="$(cygpath -u "$inno")"
+          PATH="${PATH}:${inno}"
+          echo "$PATH"
           meson setup build
           meson compile -C build
       - name: test
@@ -229,7 +223,7 @@ jobs:
       - uses: actions/setup-python@v5.3.0
       - run: |
           pip install meson
-          choco install ninja nsis groff -y
+          choco install ninja innosetup groff -y
       - uses: actions/checkout@v4.2.2
       - name: Enable ARM64 Developer Command Prompt
         if: matrix.arch == 'ARM64'
