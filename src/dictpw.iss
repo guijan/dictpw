@@ -50,7 +50,8 @@ ChangesEnvironment=WizardIsTaskSelected('stationary\env_path')
 Name: stationary; \
     Description: "Stationary Installation (creates registry entries and uninstaller)"; \
     Flags: exclusive checkablealone
-Name: stationary\env_path; Description: "Add to $env:PATH"
+; Make sure this stays the 2nd entry so its index is 1 later.
+Name: stationary\env_path; Description: "Add to $env:PATH (needs admin install)"
 ; "portable" is just a marker and never used
 Name: portable; \
     Description: "Portable Installation (no registry entries and no uninstaller)"; \
@@ -95,17 +96,26 @@ Root: HKLM; \
     ValueType: expandsz; \
     ValueName: "Path"; \
     ValueData: "{olddata};{#EXEDESTDIR}"; \
-    Check: ShouldIAddToPATH('{#EXEDESTDIR}'); \
-    Tasks: stationary\env_path
+    Check: ShouldIAddToPATH('{#EXEDESTDIR}')
 
 [code]
+procedure CurPageChanged(CurPageID: Integer);
+begin
+    { Don't add to $env:PATH for user installs. }
+    if (CurPageID = wpSelectTasks) and not IsAdminInstallMode() then
+    begin
+        WizardSelectTasks('!stationary\env_path')
+        WizardForm.TasksList.ItemEnabled[1] := false
+    end;
+end;
+
 Function ShouldIAddToPATH(Path: string): boolean;
 var
     PathList: string;
 begin
-    Result := true;
-    if RegQueryStringValue(HKLM, '{#ENVIRONMENT}', 'Path', PathList) then
-        Result := Pos(';' + PathList + ';', ';' + Path + ';') = 0;
+    Result := WizardIsTaskSelected('stationary\env_path') and
+        RegQueryStringValue(HKLM, '{#ENVIRONMENT}', 'Path', PathList) and
+        (Pos(';' + PathList + ';', ';' + Path + ';') = 0);
 end;
 
 Procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
