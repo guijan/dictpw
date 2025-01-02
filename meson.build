@@ -78,36 +78,15 @@ subdir('test')
 
 install_man('src/dictpw.1')
 
-if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
+if not ['windows', 'cygwin'].contains(host_machine.system())
+  if not get_option('installer').auto()
+    error('The \'installer\' feature is only for Windows hosts.')
+  endif
+else
   # Build a .txt version of the manual too. For producing the installer.
-
-  # Create groff IR version of the manual.
-  man_groff = custom_target('man_groff',
-                            command: [find_program('groff'), '-mdoc', '-Tascii',
-                                      '-Z'],
-                            input: [files('src/dictpw.1')],
-                            feed: true,
-                            output: ['dictpw.groff'],
-                            capture: true)
-  # Convert groff to ASCII with Unix newlines.
-  # '-bcou' means "don't use ANSI escapes".
-  man_unix = custom_target('man_unix',
-                           command: [find_program('grotty'), '-bcou'],
-                           input: [man_groff],
-                           feed: true,
-                           output: ['dictpw.txt.unix'],
-                           capture: true)
 
   unix2dos = find_program('unix2dos')
   # Convert Unix newlines to DOS newlines.
-  man = custom_target('man',
-                      command: [unix2dos],
-                      input: [man_unix],
-                      feed: true,
-                      output: ['dictpw.txt'],
-                      capture: true,
-                      build_by_default: true)
-
   # Put copies of the license and the README with DOS newlines in the build
   # directory too.
   license = custom_target('license',
@@ -125,64 +104,89 @@ if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
                          capture: true,
                          build_by_default: true)
 
-  inst_cmd = [find_program('iscc'),
-              '-DBUILDDIR=' + meson.current_build_dir(),
-              '-Fsetup-dictpw',
-              '-DMESON',
-              '-DNAME=' + meson.project_name(),
-              '-DVERSION=' + meson.project_version(),
-              '-DURL=https://github.com/guijan/dictpw',
-              # Inno Setup's ExtractFileName (basename function) expects the
-              # Windows path separator ('\'), but Meson uses the Unix path
-              # separator ('/'), so create a basename now.
-              '-DEXEFILE=' + dictpw.full_path(),
-              '-DLICENSE=' + license.full_path(),
-              '-DMANFILE=' + man.full_path(),
-              '-DREADME=' + readme.full_path(),]
+  if get_option('installer').allowed()
+    # Create groff IR version of the manual.
+    man_groff = custom_target('man_groff',
+                              command: [find_program('groff'), '-mdoc', 
+                                        '-Tascii', '-Z'],
+                              input: [files('src/dictpw.1')],
+                              feed: true,
+                              output: ['dictpw.groff'],
+                              capture: true)
+    # Convert groff to ASCII with Unix newlines.
+    # '-bcou' means "don't use ANSI escapes".
+    man_unix = custom_target('man_unix',
+                             command: [find_program('grotty'), '-bcou'],
+                             input: [man_groff],
+                             feed: true,
+                             output: ['dictpw.txt.unix'],
+                             capture: true)
+    man = custom_target('man',
+                        command: [unix2dos],
+                        input: [man_unix],
+                        feed: true,
+                        output: ['dictpw.txt'],
+                        capture: true,
+                        build_by_default: true)
 
-  fs = import('fs')
-  if libbsd_dep.found() and libbsd_dep.type_name() == 'internal'
-    inst_cmd += '-DLIBOBSD_LICENSE=subprojects/libobsd/LICENSE_libobsd.txt'
-  endif
-  # Programs built in Cygwin and MSYS2's MSYS environment are linked against
-  # a special DLL with their implementations of Unix inside, distribute it.
-  dll_copy = []
-  if host_machine.system() == 'cygwin'
-    dlls = ['/usr/bin/msys-2.0.dll', '/bin/cygwin1.dll']
-    found = false
-    foreach dll : dlls
-      if fs.is_file(dll)
-        dll_copy += fs.copyfile(dll)
-        inst_cmd += '-DMSYS_DLL=' + fs.name(dll)
-        found = true
-        break
-      endif
-    endforeach
-    if not found
-      error('cygwin/msys2 DLL not found')
+    inst_cmd = [find_program('iscc'),
+                '-DBUILDDIR=' + meson.current_build_dir(),
+                '-Fsetup-dictpw',
+                '-DMESON',
+                '-DNAME=' + meson.project_name(),
+                '-DVERSION=' + meson.project_version(),
+                '-DURL=https://github.com/guijan/dictpw',
+                '-DEXEFILE=' + dictpw.full_path(),
+                '-DLICENSE=' + license.full_path(),
+                '-DMANFILE=' + man.full_path(),
+                '-DREADME=' + readme.full_path()]
+
+    fs = import('fs')
+    if libbsd_dep.found() and libbsd_dep.type_name() == 'internal'
+      # Meson doesn't have a way to pass files from subprojects, so we work
+      # around it by passing the filename of a known location.
+      inst_cmd += '-DLIBOBSD_LICENSE=subprojects/libobsd/LICENSE_libobsd.txt'
     endif
+    # Cygwin and MSYS environment programs are linked against a special DLL 
+    # with their implementations of Unix inside, distribute it.
+    dll_copy = []
+    if host_machine.system() == 'cygwin'
+      dlls = ['/usr/bin/msys-2.0.dll', '/bin/cygwin1.dll']
+      found = false
+      foreach dll : dlls
+        if fs.is_file(dll)
+          dll_copy += fs.copyfile(dll)
+          inst_cmd += '-DMSYS_DLL=' + fs.name(dll)
+          found = true
+          break
+        endif
+      endforeach
+      if not found
+        error('cygwin/msys2 DLL not found')
+      endif
+    endif
+    # Mapping between:
+    # https://mesonbuild.com/Reference-tables.html
+    # https://jrsoftware.org/ishelp/index.php?topic=archidentifiers
+    meson_to_iscc_arch = {
+      'arm': 'arm32compatible',
+      'aarch64': 'arm64',
+      'x86_64': 'x64compatible',
+      'x86': 'x86compatible'
+    }
+    inst_cmd += '-DARCH=' + meson_to_iscc_arch[host_machine.cpu_family()]
+    if cc.get_id() == 'msvc'
+      # https://learn.microsoft.com/en-us/visualstudio/releases/2022/compatibility#build-apps-that-run-on-windows-clients
+      winmin = '6.1sp1'
+    else
+      # https://www.msys2.org/docs/windows_support/
+      # Minimum package requirement, not minimum toolchain requirement, I'm not
+      # going to bother figuring out which is right, so use the highest one.
+      winmin = '6.3'
+    endif
+    inst_cmd += '-DWIN_MIN=' + winmin
+    run_target('installer',
+               command: inst_cmd + files('src/dictpw.iss'),
+               depends: [dictpw, man, license, readme, dll_copy])
   endif
-  # Mapping between:
-  # https://mesonbuild.com/Reference-tables.html
-  # https://jrsoftware.org/ishelp/index.php?topic=archidentifiers
-  meson_to_iscc_arch = {
-    'arm': 'arm32compatible',
-    'aarch64': 'arm64',
-    'x86_64': 'x64compatible',
-    'x86': 'x86compatible'
-  }
-  inst_cmd += '-DARCH=' + meson_to_iscc_arch[host_machine.cpu_family()]
-  if cc.get_id() == 'msvc'
-    # https://learn.microsoft.com/en-us/visualstudio/releases/2022/compatibility#build-apps-that-run-on-windows-clients
-    winmin = '6.1sp1'
-  else
-    # https://www.msys2.org/docs/windows_support/
-    # Minimum package requirement, not minimum toolchain requirement, I'm not
-    # going to bother figuring out which is right, so use the highest one.
-    winmin = '6.3'
-  endif
-  inst_cmd += '-DWIN_MIN=' + winmin
-  run_target('installer',
-             command: inst_cmd + files('src/dictpw.iss'),
-             depends: [dictpw, man, license, readme, dll_copy])
 endif

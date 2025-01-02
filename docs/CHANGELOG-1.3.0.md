@@ -12,4 +12,5 @@ Changes in dictpw 1.3.0:
 - Add a portable install option to the Windows installer
 - Add an option to add the program to $env:PATH on Windows
 - Windows on 32-bit ARM support (for how long?)
+- Make building the Windows installer optional
 
