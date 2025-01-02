@@ -351,7 +351,8 @@ jobs:
            "out/setup-dictpw-${ver}-ARM64.exe"
         mv "setup/setup-dictpw-clang-cl-arm.exe" \
            "out/setup-dictpw-${ver}-ARM.exe"
-        for file in out/setup-dictpw-*.exe; do
+        # To make sure the hashes don't include the directory.
+        cd out && for file in setup-dictpw-*.exe; do
           sha256sum "$file" > "${file}.sha256sum"
         done
     - uses: actions/download-artifact@v4
