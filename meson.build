@@ -13,7 +13,7 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-project('dictpw', 'c', version: '1.2.0', license: 'ISC',
+project('dictpw', 'c', version: '1.3.0', license: 'ISC',
         default_options: ['c_std=c99', 'warning_level=3'],
         meson_version: '>=1.4.0')
 
@@ -48,6 +48,11 @@ foreach func, header : funcs
     break
   endif
 endforeach
+
+# Force subproject to be included by `meson dist --include-subprojects`
+if get_option('release')
+  subproject('libobsd')
+endif
 
 gen_dict = executable('gen_dict',
                       'src/gen_dict.c',

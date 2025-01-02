@@ -83,12 +83,14 @@ jobs:
 
   glibc:
     runs-on: ubuntu-latest
+    outputs:
+      ver: ${{steps.ver.outputs.ver}}
     steps:
       - name: setup
         run: |
           pip install meson
           sudo apt update
-          sudo apt install -y ninja-build
+          sudo apt install -y ninja-build jq
       - uses: actions/checkout@v4.2.2
       - name: build
         run: |
@@ -96,6 +98,11 @@ jobs:
           meson compile -C build
       - name: test
         run: meson test -C build
+      - name: output version # for release builds.
+        id: ver
+        run: |
+          ver="$(meson introspect --projectinfo build | jq -r '.version')"
+          printf 'ver=%s' "$ver" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4.5.0
         if: always()
         with:
@@ -142,10 +149,15 @@ jobs:
       - uses: actions/checkout@v4.2.2
       - name: build
         run: |
-          meson setup build
-          meson compile -C build
-      - name: test
-        run: meson test -C build
+          meson setup build -Drelease=true --wrap-mode=forcefallback
+      - name: dist
+        run: |
+          # For release builds.
+          meson dist --include-subprojects --formats xztar,gztar -C build
+      - uses: actions/upload-artifact@v4.5.0
+        with:
+          name: dist
+          path: build/meson-dist/*
       - uses: actions/upload-artifact@v4.5.0
         if: always()
         with:
@@ -175,13 +187,15 @@ jobs:
           inno="$(cygpath -u "$inno")"
           PATH="${PATH}:${inno}"
           echo "$PATH"
-          meson setup build
+          meson setup build -Dbuildtype=release # for release
           meson compile -C build
+          strip build/dictpw.exe # for release
       - name: test
         run: meson test -C build
       - name: installer
         run: |
           meson compile installer -C build
+          mv build/setup-dictpw.exe build/setup-dictpw-${{matrix.sys}}.exe
       - uses: actions/upload-artifact@v4.5.0
         if: always()
         with:
@@ -190,8 +204,8 @@ jobs:
       - uses: actions/upload-artifact@v4.5.0
         if: success()
         with:
-          name: setup-${{matrix.sys}}
-          path: build/setup-dictpw.exe
+          name: setup-dictpw-${{matrix.sys}}
+          path: build/setup-*.exe
 
   netbsd:
     runs-on: ubuntu-latest
@@ -292,7 +306,8 @@ jobs:
       - name: inst
         run: |
           meson compile installer -C build
-          ls -R build/
+          mv "build/setup-dictpw.exe" `
+            "build/setup-dictpw-${{matrix.cc}}-${{matrix.arch}}.exe"
       - uses: actions/upload-artifact@v4.5.0
         if: always()
         with:
@@ -301,5 +316,67 @@ jobs:
       - uses: actions/upload-artifact@v4.5.0
         if: success()
         with:
-          name: setup-vs-${{matrix.cc}}-${{matrix.arch}}
+          name: setup-dictpw-${{matrix.cc}}-${{matrix.arch}}
           path: build/setup-*.exe
+
+  publish:
+    needs: [msys2, vs, glibc, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      ver: '${{needs.glibc.outputs.ver}}'
+    steps:
+    - uses: actions/checkout@v4.2.2
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: 'setup-dictpw-*'
+        path: 'setup/'
+        merge-multiple: true
+    - name: debug
+      run: |
+        echo ls:
+        ls -skR .
+        echo env:
+        env
+    - name: installers
+      run: |
+        echo $ver
+        mkdir out
+        mv "setup/setup-dictpw-ucrt64.exe" \
+           "out/setup-dictpw-${ver}-x64.exe"
+        mv "setup/setup-dictpw-mingw32.exe" \
+           "out/setup-dictpw-${ver}-x86.exe"
+        mv "setup/setup-dictpw-clang-cl-aarch64.exe" \
+           "out/setup-dictpw-${ver}-ARM64.exe"
+        mv "setup/setup-dictpw-clang-cl-arm.exe" \
+           "out/setup-dictpw-${ver}-ARM.exe"
+        for file in out/setup-dictpw-*.exe; do
+          sha256sum "$file" > "${file}.sha256sum"
+        done
+        echo 'output dir:'
+    - uses: actions/download-artifact@v4
+      with:
+        name: dist
+        path: 'out/'
+    - name: publish check
+      run: |
+        ls -sk out/ # debug
+        # Test the subproject is included.
+        tar -ztvf out/dictpw-*.tar.gz | grep '/subprojects/libobsd/meson.build'
+
+        tag="$(echo '${{github.event.ref}}' | sed 's|refs/tags/v||')"
+        if [ "$tag" = "$ver" ]; then
+          echo "should_release=true" >> "$GITHUB_ENV"
+        else
+          echo "'$tag' isn't a version"
+          echo "should_release=false" >> "$GITHUB_ENV"
+        fi
+    - name: publish
+      if: fromJSON(env.should_release) == true
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      run: |
+        gh release create "v$ver" --title "dictpw $ver" \
+          --notes-file "docs/CHANGELOG-${ver}.md" \
+          --target "$GITHUB_SHA" out/*

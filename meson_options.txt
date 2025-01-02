@@ -14,3 +14,7 @@
 
 option('dict', type: 'string', value: 'eff_large_wordlist.txt',
        description: 'Generate the dictionary from the specified file.')
+
+
+# Only for internal usage.
+option('release', type: 'boolean', value: false)

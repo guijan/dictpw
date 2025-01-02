@@ -1,4 +1,4 @@
-Changes in dictpw master:
+Changes in dictpw 1.3.0:
 
 - Small performance tweak on UCRT
 - Small tweaks to the manual
