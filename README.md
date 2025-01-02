@@ -1,5 +1,6 @@
 <!--
-Copyright (c) 2021-2022, 2024 Guilherme Janczak <guilherme.janczak@yandex.com>
+Copyright (c) 2021-2022, 2024-2025 
+    Guilherme Janczak <guilherme.janczak@yandex.com>
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -49,8 +50,10 @@ chummy.iguana.outsider
 ### Linux, macOS, other Unix systems, and HaikuOS
 Dictpw depends on [Meson](https://mesonbuild.com/) and a C compiler.
 [Git](https://git-scm.com/) is one method to acquire the source code.
-Some systems optionally depend on either libbsd or libobsd, if neither is
-present, it's automatically downloaded and statically linked into dictpw.
+Some systems optionally depend on either 
+[libbsd](https://libbsd.freedesktop.org/) or 
+[libobsd](https://github.com/guijan/libobsd/), if neither is
+present, libobsd is automatically downloaded and statically linked into dictpw.
 
 Acquire the source code with git and enter its directory:
 ```console
