@@ -1,5 +1,5 @@
 [host_machine]
 system = 'windows'
-cpu_family = 'aarch64'
+cpu_family = 'x86'
 cpu = 'unused'
 endian = 'little'

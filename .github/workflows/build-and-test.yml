@@ -218,33 +218,68 @@ jobs:
     strategy:
       matrix:
         cc: [cl, clang-cl]
-        arch: [x64, ARM64]
+        arch: [x86_64, x86, aarch64, arm]
+    env:
+      arch_map: |
+        {
+          "x86_64":
+          {
+            "_comment": "MSVC Dev CMD action name for this arch.",
+            "msvc_dev_cmd": "x64",
+            "_comment": "Is this a cross compiler?",
+            "msvc_cross": false,
+          },
+          "x86":
+          {
+            "_comment": "Take the chance to test more cross compilers.",
+            "msvc_dev_cmd": "amd64_x86",
+            "msvc_cross": true,
+          },
+          "aarch64":
+          {
+            "msvc_dev_cmd": "amd64_arm64",
+            "msvc_cross": true,
+          },
+          "arm":
+          {
+            "msvc_dev_cmd": "amd64_arm",
+            "msvc_cross": true,
+          },
+        }
     steps:
       - uses: actions/setup-python@v5.3.0
       - run: |
           pip install meson
           choco install ninja innosetup groff -y
       - uses: actions/checkout@v4.2.2
-      - name: Enable ARM64 Developer Command Prompt
-        if: matrix.arch == 'ARM64'
+      - name: Enable Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1.13.0
         with:
-          arch: amd64_arm64
-      - name: Enable x64 Developer Command Prompt
-        if: matrix.arch == 'x64'
-        uses: ilammy/msvc-dev-cmd@v1.13.0
+          arch: ${{fromJSON(env.arch_map)[matrix.arch].msvc_dev_cmd}}
+          # Windows SDK 10.0.26100.0 dropped support for 32-bit ARM
+          # https://github.com/actions/runner-images/issues/10981#issuecomment-2481185614
+          # Pin in to the last version that had ARM.
+          sdk: ${{matrix.arch == 'arm' && '10.0.22621.0' || ''}}
       - name: build
         run: |
-          if ("${{matrix.arch}}" -eq 'ARM64') {
+          if ("${{matrix.cc}}" -eq 'clang-cl') {
+            clang-cl -print-target-triple
+          }
+          $cross = "${{fromJSON(env.arch_map)[matrix.arch].msvc_cross}}"
+          if ($cross -eq 'true') {
             $buildcc = "--native-file=.github/workflows/meson-vs-gcc.txt"
-            $hostarch = "--cross-file=.github/workflows/meson-vs-aarch64.txt"
-            $hostcc = "--cross-file=.github/workflows/meson-vs-${{matrix.cc}}.txt"
+            $hostarch = `
+              "--cross-file=.github/workflows/meson-vs-${{matrix.arch}}.txt"
+            $hostcc = `
+              "--cross-file=.github/workflows/meson-vs-${{matrix.cc}}.txt"
             # clang-cl needs extra args to target a particular architecture.
-            $hostcc_args = if (${{matrix.cc}} -eq 'clang-cl') {
-              "--cross-file=.github/workflows/meson-vs-clang-cl-aarch64.txt"
+            # https://github.com/llvm/llvm-project/raw/1a0d0ae234544dc4978f1e12730408cb83f6b923/clang/test/Preprocessor/predefined-macros-no-warnings.c
+            $hostcc_args = if ('${{matrix.cc}}' -eq 'clang-cl') {
+              "--cross-file=.github/workflows/meson-vs-clang-cl-${{matrix.arch}}.txt"
             }
           } else {
-            $hostcc = "--native-file=.github/workflows/meson-vs-${{matrix.cc}}.txt"
+            $hostcc = `
+              "--native-file=.github/workflows/meson-vs-${{matrix.cc}}.txt"
           }
           # Don't do debug builds because that triggers a Windows bug:
           # https://developercommunity.visualstudio.com/t/_setmaxstdio-hangs-the-program-if-the/10164855?space=62&q=setmaxstdio&viewtype=all

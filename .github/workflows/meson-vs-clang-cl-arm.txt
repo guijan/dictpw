@@ -1,0 +1,3 @@
+[binaries]
+c = ['clang-cl', '--target=arm-win32-msvc']
+cpp = c

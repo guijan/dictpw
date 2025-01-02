@@ -11,3 +11,5 @@ Changes in dictpw master:
 - Set documentation read only on Windows to prevent accidental modification
 - Add a portable install option to the Windows installer
 - Add an option to add the program to $env:PATH on Windows
+- Windows on 32-bit ARM support (for how long?)
+
