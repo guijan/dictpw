@@ -74,7 +74,7 @@ jobs:
               --cross-file=.github/workflows/meson-emscripten.txt
           meson compile -C build
       - name: test
-        run: meson test -C build
+        run: meson test -t 3 -C build
       - uses: actions/upload-artifact@v4.5.0
         if: always()
         with:
