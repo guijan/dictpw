@@ -22,13 +22,12 @@ args = ['-D_GNU_SOURCE']
 
 cc = meson.get_compiler('c')
 
-if cc.get_id() == 'msvc'
-  # Spectre mitigations are off by default under MSVC for some ungodly reason.
-  args += '/Qspectre'
+# Spectre mitigations are off by default under MSVC for some ungodly reason.
+args += cc.get_supported_arguments('/Qspectre')
+if host_machine.system() == 'windows'
   # https://docs.microsoft.com/en-us/cpp/c-runtime-library/multithreaded-libraries-performance?view=msvc-170#maximizing-performance
   args += '-D_CRT_DISABLE_PERFCRIT_LOCKS'
 endif
-
 add_project_arguments(args, language: 'c')
 
 subdir('compat')
