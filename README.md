@@ -1,5 +1,5 @@
 <!--
-Copyright (c) 2021-2022, 2024-2025 
+Copyright (c) 2021-2022, 2024-2025
     Guilherme Janczak <guilherme.janczak@yandex.com>
 
 Permission to use, copy, modify, and distribute this software for any
@@ -47,14 +47,14 @@ chummy.iguana.outsider
 ```
 
 ## Compiling
-### Linux, macOS, other Unix systems, and HaikuOS
 Dictpw depends on [Meson](https://mesonbuild.com/) and a C compiler.
 [Git](https://git-scm.com/) is one method to acquire the source code.
-Some systems optionally depend on either 
-[libbsd](https://libbsd.freedesktop.org/) or 
+Some systems optionally depend on either
+[libbsd](https://libbsd.freedesktop.org/) or
 [libobsd](https://github.com/guijan/libobsd/), if neither is
 present, libobsd is automatically downloaded and statically linked into dictpw.
 
+### Linux, macOS, other Unix systems, and HaikuOS
 Acquire the source code with git and enter its directory:
 ```console
 $ git clone --depth 1 https://github.com/guijan/dictpw
@@ -68,6 +68,9 @@ $ meson setup build && meson compile -C build
 The binary will be in _build/dictpw_.
 
 ### Windows
+Windows hosts optionally depend on Inno Setup in the `$env:PATH` to produce an
+installer.
+
 #### MSYS2
 Install [MSYS2](https://www.msys2.org/) and follow the installation
 instructions; make sure to read the
@@ -81,7 +84,13 @@ The instructions below are the same for the UCRT64 (x64 binaries) and MINGW32
 Install the dependencies:
 ```console
 foo@bar UCRT64 ~
-$ pacboys -S --noconfirm git: dos2unix: groff: gcc:p meson:p ninja:p nsis:p
+$ winget install -e --id JRSoftware.InnoSetup
+foo@bar UCRT64 ~
+$ inno="$(cmd //c 'echo %ProgramFiles(x86)%' | cygpath -uf-)/Inno Setup 6/"
+foo@bar UCRT64 ~
+$ PATH="${PATH}:${inno}"
+foo@bar UCRT64 ~
+$ pacboys -S --noconfirm git: dos2unix: groff: gcc:p meson:p ninja:p
 ```
 
 Acquire the source code with git and enter its directory:
@@ -92,7 +101,7 @@ foo@bar UCRT64 ~
 $ cd dictpw
 ```
 
-Compile the installer:
+Compile the program and installer:
 ```console
 foo@bar UCRT64 ~/dictpw
 $ meson setup build && meson compile installer -C build
@@ -104,7 +113,7 @@ be at _build/dictpw.exe_.
 Open up `powershell.exe` and install the dependencies via
 [Chocolatey](https://chocolatey.org/):
 ```console
-PS C:\Users\foo> choco install -y groff nsis meson git
+PS C:\Users\foo> choco install -y groff innosetup meson git dos2unix
 PS C:\Users\foo> refreshenv
 ```
 
