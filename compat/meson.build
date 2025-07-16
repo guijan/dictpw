@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Guilherme Janczak <guilherme.janczak@yandex.com>
+# Copyright (c) 2022,2025 Guilherme Janczak <guilherme.janczak@yandex.com>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -25,8 +25,10 @@ elif cc.has_function('cap_enter', args: args,
   caps_c = files('caps_capsicum.c')
 elif cc.has_function('sandbox_init', args: args, prefix: '#include <sandbox.h>')
   caps_c = files('caps_sandbox_init.c')
+# emscripten's setrlimit is stubbed and prints unnecessary warnings, ignore it.
 elif cc.has_function('setrlimit', args: args,
-                     prefix: '#include <sys/resource.h>')
+                     prefix: '#include <sys/resource.h>') and \
+     host_machine.system() != 'emscripten'
   if host_machine.system() == 'haiku'
     args += '-DARC4RANDOM_NEEDS_FD'
   endif
