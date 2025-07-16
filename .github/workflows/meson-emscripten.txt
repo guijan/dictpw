@@ -4,18 +4,14 @@ cpp = 'em++'
 ar = 'emar'
 exe_wrapper = 'node'
 
-[properties]
-sys_root = '/usr/share/emscripten/system'
-shared_lib_suffix = 'js'
-static_lib_suffix = 'js'
-shared_module_suffix = 'js'
-exe_suffix = 'js'
-
 [built-in options]
-c_link_args = ['-s', 'EXPORTED_FUNCTIONS=_main,_malloc']
+c_args = []
+c_link_args = ['-sEXIT_RUNTIME=1', '-sSUPPORT_BIG_ENDIAN=1']
+cpp_args = c_args
+cpp_link_args = c_link_args
 
 [host_machine]
 system = 'emscripten'
-cpu_family = 'x86'
-cpu = 'x86_64'
+cpu_family = 'wasm32'
+cpu = 'wasm32'
 endian = 'little'
