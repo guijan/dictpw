@@ -179,9 +179,8 @@ else
       winmin = '6.1sp1'
     else
       # https://www.msys2.org/docs/windows_support/
-      # Minimum package requirement, not minimum toolchain requirement, I'm not
-      # going to bother figuring out which is right, so use the highest one.
-      winmin = '6.3'
+      # The highest among the minimum Windows versions msys2 supports.
+      winmin = '10.0'
     endif
     inst_cmd += '-DWIN_MIN=' + winmin
     run_target('installer',
