@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 Guilherme Janczak <guilherme.janczak@yandex.com>
+# Copyright (c) 2022-2026 Guilherme Janczak <guilherme.janczak@yandex.com>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -109,37 +109,6 @@ jobs:
           name: meson-logs-glibc
           path: build/meson-logs
 
-  haiku:
-    runs-on: ubuntu-22.04
-    container: 'docker.io/hectorm/qemu-haiku:latest'
-    steps:
-      # Copied from: https://github.com/hectorm/docker-qemu-haiku#github-actions
-      # Notice I changed make to meson in the 'Install packages' step.
-      - name: 'Wait until the VM is ready'
-        run: 'container-init & timeout 600 vmshell exit 0'
-      - name: 'Install packages'
-        run: 'vmshell pkgman install -y meson gcc haiku_devel'
-      - name: 'Checkout project'
-        uses: 'actions/checkout@main'
-      - name: 'Copy project to VM'
-        run: 'vmshell mkdir ./src/; tar -cf - ./ | vmshell tar -xf - -C ./src/'
-      # Now the rest is much of the same old.
-      - name: build
-        run: |
-          vmshell meson setup build src
-          vmshell meson compile -C build
-      - name: test
-        run: vmshell meson test -C build
-      - name: copy falure logs
-        if: always()
-        run: |
-          vmshell tar -cf - build/meson-logs | tar -xf -
-      - uses: actions/upload-artifact@v4.5.0
-        if: always()
-        with:
-          name: meson-logs-haiku
-          path: build/meson-logs
-
   macos:
     runs-on: macos-latest
     steps:
@@ -207,24 +176,96 @@ jobs:
           name: setup-dictpw-${{matrix.sys}}
           path: build/setup-*.exe
 
-  netbsd:
+  cpa:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: cpa.sh {0}
+    env:
+      pkgin_setup: &pkgin
+        sudo pkgin -y install meson git mozilla-rootcerts-openssl
+      freebsd_setup: &pkg sudo pkg install -y meson ninja gcc
+    strategy:
+      matrix:
+        os:
+          - name: freebsd
+            architecture: x86-64
+            version: '15.1'
+            setup: *pkg
+          - name: openbsd
+            architecture: arm64
+            version: '7.9'
+            setup: sudo pkg_add meson
+          - name: netbsd
+            architecture: x86-64
+            version: '11.0'
+            setup: *pkgin
+          - name: dragonflybsd
+            architecture: x86-64
+            version: '6.4.2'
+            setup: *pkg
+          - name: haiku
+            architecture: x86-64
+            version: 'r1beta6'
+            setup: pkgman install -y meson gcc haiku_devel
+          - name: omnios
+            architecture: x86-64
+            version: 'r151056'
+            # https://pkgsrc.smartos.org/install-on-illumos/
+            setup_prepare: |
+              sudo su
+              pkg install developer/build-essential
+
+              #
+              # Copy and paste the lines below to install the latest bootstrap.
+              #
+              BOOTSTRAP_TAR="bootstrap-trunk-x86_64-20260811.tar.gz"
+              BOOTSTRAP_SHA="e5e620ade4b45695aa385aea25227e94f49f078f"
+
+              # Download the bootstrap kit to the current directory.
+              curl -O https://pkgsrc.smartos.org/packages/SmartOS/bootstrap/${BOOTSTRAP_TAR}
+
+              # Verify the SHA1 checksum.
+              [ "${BOOTSTRAP_SHA}" = "$(/bin/digest -a sha1 ${BOOTSTRAP_TAR})" ] || echo "ERROR: checksum failure"
+
+              # Verify PGP signature.  This step is optional, and requires gpg.
+              #curl -O https://pkgsrc.smartos.org/packages/SmartOS/bootstrap/${BOOTSTRAP_TAR}.asc
+              #curl -sS https://pkgsrc.smartos.org/pgp/8254B861.asc | gpg2 --import
+              #gpg2 --verify ${BOOTSTRAP_TAR}{.asc,}
+
+              # Install bootstrap kit to /opt/local
+              tar -zxpf ${BOOTSTRAP_TAR} -C /
+
+              # Add to PATH/MANPATH.
+              PATH=/opt/local/sbin:/opt/local/bin:$PATH
+              MANPATH=/opt/local/man:$MANPATH
+            setup: *pkgin
+            build_prepare: PATH=/opt/local/sbin:/opt/local/bin:$PATH
     steps:
-      - uses: actions/checkout@v4.2.2
-      - name: test on NetBSD
-        uses: cross-platform-actions/action@v0.26.0
+      - uses: actions/checkout@v7.0.1
+      - name: Start VM on ${{ matrix.os.name }}
+        uses: cross-platform-actions/action@v1.6.0
         with:
-          operating_system: netbsd
-          version: '9.3'
-          run: |
-            sudo pkgin -y install meson git mozilla-rootcerts-openssl
-            meson setup build
-            meson compile -C build
-            meson test -C build
+          operating_system: ${{ matrix.os.name }}
+          architecture: ${{ matrix.os.architecture }}
+          version: ${{ matrix.os.version }}
+          shell: sh
+          memory: 2G
+      - name: setup
+        run: |
+          ${{ matrix.os.setup_prepare }}
+          ${{ matrix.os.setup }}
+      - name: build
+        run: |
+          ${{ matrix.os.build_prepare }}
+          meson setup build
+          meson compile -C build
+      - name: test
+        run: meson test -C build
       - uses: actions/upload-artifact@v4.5.0
         if: always()
         with:
-          name: meson-logs-netbsd
+          name: meson-logs-${{ matrix.os.name }}
           path: build/meson-logs
 
   vs:

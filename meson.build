@@ -17,8 +17,11 @@ project('dictpw', 'c', version: '1.3.0', license: 'ISC',
         default_options: ['c_std=c99', 'warning_level=3'],
         meson_version: '>=1.4.0')
 
-# Makes all functions, including BSD functions, visible on GNU.
-args = ['-D_GNU_SOURCE']
+args = []
+# Makes all functions, including BSD functions, visible on many systems.
+if host_machine.system() != 'sunos'
+  args = ['-D_GNU_SOURCE']
+endif
 
 cc = meson.get_compiler('c')
 

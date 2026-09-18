@@ -41,15 +41,6 @@ task:
   << : *common_script
 
 task:
-  freebsd_instance:
-    # Keep updated with newest release from https://www.freebsd.org/releases/
-    image: freebsd-14-2-release-amd64-ufs
-  name: freebsd
-  setup_script:
-    - pkg install -y meson ninja gcc
-  << : *common_script
-
-task:
   container:
     image: alpine:latest
     kvm: true
