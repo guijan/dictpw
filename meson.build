@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, 2024-2025
+# Copyright (c) 2021-2022, 2024-2026
 #     Guilherme Janczak <guilherme.janczak@yandex.com>
 #
 # Permission to use, copy, modify, and distribute this software for any
@@ -174,7 +174,7 @@ else
       'x86': 'x86compatible'
     }
     inst_cmd += '-DARCH=' + meson_to_iscc_arch[host_machine.cpu_family()]
-    if cc.get_id() == 'msvc'
+    if cc.get_argument_syntax() == 'msvc'
       # https://learn.microsoft.com/en-us/visualstudio/releases/2022/compatibility#build-apps-that-run-on-windows-clients
       winmin = '6.1sp1'
     else
