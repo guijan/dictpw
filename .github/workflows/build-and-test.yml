@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 Guilherme Janczak <guilherme.janczak@yandex.com>
+# Copyright (c) 2022-2026 Guilherme Janczak <guilherme.janczak@yandex.com>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -232,34 +232,13 @@ jobs:
     strategy:
       matrix:
         cc: [cl, clang-cl]
-        arch: [x86_64, x86, aarch64, arm]
-    env:
-      arch_map: |
-        {
-          "x86_64":
-          {
-            "_comment": "MSVC Dev CMD action name for this arch.",
-            "msvc_dev_cmd": "x64",
-            "_comment": "Is this a cross compiler?",
-            "msvc_cross": false,
-          },
-          "x86":
-          {
-            "_comment": "Take the chance to test more cross compilers.",
-            "msvc_dev_cmd": "amd64_x86",
-            "msvc_cross": true,
-          },
-          "aarch64":
-          {
-            "msvc_dev_cmd": "amd64_arm64",
-            "msvc_cross": true,
-          },
-          "arm":
-          {
-            "msvc_dev_cmd": "amd64_arm",
-            "msvc_cross": true,
-          },
-        }
+        win:
+          - name: amd64
+            arch: amd64
+          - name: amd64_x86
+            arch: x86
+          - name: amd64_arm64
+            arch: aarch64
     steps:
       - uses: actions/setup-python@v5.3.0
       - run: |
@@ -269,27 +248,22 @@ jobs:
       - name: Enable Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1.13.0
         with:
-          arch: ${{fromJSON(env.arch_map)[matrix.arch].msvc_dev_cmd}}
-          # Windows SDK 10.0.26100.0 dropped support for 32-bit ARM
-          # https://github.com/actions/runner-images/issues/10981#issuecomment-2481185614
-          # Pin in to the last version that had ARM.
-          sdk: ${{matrix.arch == 'arm' && '10.0.22621.0' || ''}}
+          arch: ${{matrix.win.name}}
       - name: build
         run: |
           if ("${{matrix.cc}}" -eq 'clang-cl') {
             clang-cl -print-target-triple
           }
-          $cross = "${{fromJSON(env.arch_map)[matrix.arch].msvc_cross}}"
-          if ($cross -eq 'true') {
+          if ("${{matrix.win.name}}" -ne "${{matrix.win.arch}}") {
             $buildcc = "--native-file=.github/workflows/meson-vs-gcc.txt"
             $hostarch = `
-              "--cross-file=.github/workflows/meson-vs-${{matrix.arch}}.txt"
+              "--cross-file=.github/workflows/meson-vs-${{matrix.win.arch}}.txt"
             $hostcc = `
               "--cross-file=.github/workflows/meson-vs-${{matrix.cc}}.txt"
             # clang-cl needs extra args to target a particular architecture.
             # https://github.com/llvm/llvm-project/raw/1a0d0ae234544dc4978f1e12730408cb83f6b923/clang/test/Preprocessor/predefined-macros-no-warnings.c
             $hostcc_args = if ('${{matrix.cc}}' -eq 'clang-cl') {
-              "--cross-file=.github/workflows/meson-vs-clang-cl-${{matrix.arch}}.txt"
+              "--cross-file=.github/workflows/meson-vs-clang-cl-${{matrix.win.arch}}.txt"
             }
           } else {
             $hostcc = `
@@ -307,16 +281,16 @@ jobs:
         run: |
           meson compile installer -C build
           mv "build/setup-dictpw.exe" `
-            "build/setup-dictpw-${{matrix.cc}}-${{matrix.arch}}.exe"
+            "build/setup-dictpw-${{matrix.cc}}-${{matrix.win.arch}}.exe"
       - uses: actions/upload-artifact@v4.5.0
         if: always()
         with:
-          name: meson-logs-vs-${{matrix.cc}}-${{matrix.arch}}
+          name: meson-logs-vs-${{matrix.cc}}-${{matrix.win.arch}}
           path: build/meson-logs
       - uses: actions/upload-artifact@v4.5.0
         if: success()
         with:
-          name: setup-dictpw-${{matrix.cc}}-${{matrix.arch}}
+          name: setup-dictpw-${{matrix.cc}}-${{matrix.win.arch}}
           path: build/setup-*.exe
 
   publish:
@@ -349,8 +323,6 @@ jobs:
            "out/setup-dictpw-${ver}-x86.exe"
         mv "setup/setup-dictpw-clang-cl-aarch64.exe" \
            "out/setup-dictpw-${ver}-ARM64.exe"
-        mv "setup/setup-dictpw-clang-cl-arm.exe" \
-           "out/setup-dictpw-${ver}-ARM.exe"
         # To make sure the hashes don't include the directory.
         cd out && for file in setup-dictpw-*.exe; do
           sha256sum "$file" > "${file}.sha256sum"
