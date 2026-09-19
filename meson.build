@@ -168,21 +168,14 @@ else
     # https://mesonbuild.com/Reference-tables.html
     # https://jrsoftware.org/ishelp/index.php?topic=archidentifiers
     meson_to_iscc_arch = {
-      'arm': 'arm32compatible',
       'aarch64': 'arm64',
       'x86_64': 'x64compatible',
       'x86': 'x86compatible'
     }
     inst_cmd += '-DARCH=' + meson_to_iscc_arch[host_machine.cpu_family()]
-    if cc.get_argument_syntax() == 'msvc'
-      # https://learn.microsoft.com/en-us/visualstudio/releases/2022/compatibility#build-apps-that-run-on-windows-clients
-      winmin = '6.1sp1'
-    else
-      # https://www.msys2.org/docs/windows_support/
-      # The highest among the minimum Windows versions msys2 supports.
-      winmin = '10.0'
-    endif
-    inst_cmd += '-DWIN_MIN=' + winmin
+    # https://learn.microsoft.com/en-us/visualstudio/releases/2022/compatibility#build-apps-that-run-on-windows-clients
+    # https://www.msys2.org/docs/windows_support/
+    inst_cmd += '-DWIN_MIN=10.0'
     run_target('installer',
                command: inst_cmd + files('src/dictpw.iss'),
                depends: [dictpw, man, license, readme, dll_copy])
