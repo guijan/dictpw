@@ -64,6 +64,7 @@ gen_dict_h = custom_target('gen_dict',
                            depend_files: get_option('dict'),
                            command: gen_dict)
 
+win_min = '10.0'
 dictpw = executable('dictpw',
                     'src/dict.c',
                     'src/dictpw.c',
@@ -72,7 +73,7 @@ dictpw = executable('dictpw',
                     install: true,
                     dependencies: libbsd_dep,
                     include_directories: incdir,
-                    win_subsystem: 'console')
+                    win_subsystem: 'console,' + win_min)
 subdir('test')
 
 install_man('src/dictpw.1')
@@ -175,7 +176,7 @@ else
     inst_cmd += '-DARCH=' + meson_to_iscc_arch[host_machine.cpu_family()]
     # https://learn.microsoft.com/en-us/visualstudio/releases/2022/compatibility#build-apps-that-run-on-windows-clients
     # https://www.msys2.org/docs/windows_support/
-    inst_cmd += '-DWIN_MIN=10.0'
+    inst_cmd += '-DWIN_MIN=' + win_min
     run_target('installer',
                command: inst_cmd + files('src/dictpw.iss'),
                depends: [dictpw, man, license, readme, dll_copy])
